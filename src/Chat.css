@@ -1,0 +1,36 @@
+/* Chat.css */
+.chat-container {
+    border: 1px solid #ccc;
+    margin: 20px;
+    padding: 10px;
+  }
+  
+  .chat-messages {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .message {
+    padding: 5px;
+    margin-bottom: 5px;
+  }
+  
+  .message.user {
+    background-color: #e6e6e6;
+  }
+  
+  .chat-input {
+    display: flex;
+    margin-top: 10px;
+  }
+  
+  .chat-input input {
+    flex: 1;
+    padding: 5px;
+  }
+  
+  .chat-input button {
+    padding: 5px;
+    margin-left: 5px;
+  }
+  

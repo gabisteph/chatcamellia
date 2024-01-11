@@ -1,0 +1,88 @@
+body {
+  background-color: #1C1D21;
+}
+
+.auth {
+  padding: 20px;
+  background-color: #1C1D21;
+  background: #1C1D21;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.form-container {
+  text-align: center;
+}
+
+.form-name {
+  color: #FFF;
+  font-family: Poppins;
+  font-size: 48px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  margin-bottom: 20px; /* Adiciona espaçamento abaixo do título */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.form-group {
+  width: 381px;
+  margin-bottom: 20px; /* Aumenta o espaçamento entre grupos de campos */
+  color: rgba(255, 255, 255, 0.50);
+  font-family: Poppins;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  display: flex;
+  flex-direction: column; /* Coloca os elementos em uma coluna */
+  align-items: flex-start; /* Alinha os elementos à esquerda */
+}
+
+label {
+  margin-bottom: 5px;
+}
+
+input {
+  outline: 0;
+  width: 100%;
+  padding: 8px;
+  color:#FFF;
+  background-color: #1C1D21;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  margin-bottom: 10px; /* Adiciona espaçamento abaixo do input */
+}
+
+.error-message {
+  color: #ff0000;
+  margin-top: 5px;
+}
+
+.submit-button {
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  width: 50%;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #9C6FE4; /* Adiciona espaçamento acima do botão */
+}
+.link {
+  color: #FFF;
+  display: flex;
+  flex-direction: column; /* Coloca os elementos em uma coluna */
+  align-items: flex-start; /* Alinha os elementos à esquerda */
+}
+a {
+  color: #FFF;
+  text-decoration: none;
+ }
