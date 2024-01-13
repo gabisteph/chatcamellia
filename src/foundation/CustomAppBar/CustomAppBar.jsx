@@ -1,11 +1,7 @@
-import { Box } from "@mui/material";
 import React from "react";
+import Box from "@mui/material/Box";
 
-interface CustomAppBarProps {
-  children: any;
-}
-
-export default function CustomAppBar({ children }: CustomAppBarProps) {
+function CustomAppBar({ children }) {
   return (
     <Box
       height="63px"
@@ -18,3 +14,5 @@ export default function CustomAppBar({ children }: CustomAppBarProps) {
     </Box>
   );
 }
+
+export default CustomAppBar;

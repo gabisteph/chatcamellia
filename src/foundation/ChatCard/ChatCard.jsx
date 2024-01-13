@@ -1,12 +1,7 @@
 import { Avatar, Box, Typography } from "@mui/material";
 import React from "react";
-import { ChatCardType } from "../../feature/pages/homepage/utils/LeftPanel.types";
 
-interface ChatCardProps {
-  item: ChatCardType;
-}
-
-export default function ChatCard({ item }: ChatCardProps) {
+export default function ChatCard({ item }) {
   const { name, lastSeen, lastText, selected } = item;
   return (
     <Box

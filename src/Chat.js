@@ -6,7 +6,7 @@ import {
   Input,
   Typography,
 } from "@mui/material";
-import CustomAppBar from "./foundation/CustomAppBar/CustomAppBar.tsx";
+import CustomAppBar from "./foundation/CustomAppBar/CustomAppBar.jsx";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import MicIcon from "@mui/icons-material/Mic";
 
@@ -31,7 +31,7 @@ const Chat = () => {
   };
 
   return (
-    <Box height="70%" display="flex-end" flexDirection="column">
+    <Box height="100%" display="flex" flexDirection="column">
       <CustomAppBar>
         {/* ... (seu código existente para exibir informações do usuário) */}
       </CustomAppBar>
