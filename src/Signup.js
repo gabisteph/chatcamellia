@@ -17,11 +17,36 @@ const Signup = () => {
       repeatpassword: Yup.string().required('Campo obrigatório'),
     });
   
-    const handleSubmit = (values, { setSubmitting }) => {
-      // Lógica de autenticação aqui
-      console.log('Valores submetidos:', values);
-      setSubmitting(false);
+    const handleSubmit = async (values, { setSubmitting }) => {
+      try {
+        const apiUrl = '/register';  // Centralize a URL da API
+  
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        });
+  
+        if (!response.ok) {
+          console.error('Erro ao criar usuário:', response.statusText);
+          // Se possível, adicione uma lógica para exibir mensagens de erro mais detalhadas para o usuário.
+          return null;
+        }
+  
+        const data = await response.json();
+        console.log('Usuário criado com sucesso:', data);
+        return data;
+      } catch (error) {
+        console.error('Erro ao criar usuário:', error.message);
+        return null;
+      } finally {
+        // Remova console.log sensíveis
+        setSubmitting(false);
+      }
     };
+  
   
     return (
       <Formik

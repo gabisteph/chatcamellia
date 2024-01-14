@@ -1,4 +1,3 @@
-// Importando os módulos e componentes necessários
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -11,29 +10,86 @@ import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import ChatCard from "./foundation/ChatCard/ChatCard.jsx";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
+import { ChatCardType } from "./assets/utils/LeftPanel.types.js";
 
-// Definindo o array de chats locais
-const localChats = [
+const localChats: ChatCardType[] = [
   {
     name: "Balram",
-    lastText: "Hey there testing WhatsApp",
+    lastText: "Hey there testing whatsapp",
     lastSeen: "4:21 PM",
     selected: true,
   },
   {
     name: "Dev Stack",
-    lastText: "DevStack testing WhatsApp",
+    lastText: "DevStack testing whatsapp",
     lastSeen: "8:51 PM",
     selected: false,
   },
-  // ... (restante dos itens omitidos para brevidade)
+  {
+    name: "Test 1",
+    lastText: "Testing okk how test test 123",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Test 2",
+    lastText: "Testing Yes",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Test 3",
+    lastText: "Ok Tested",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Test 4",
+    lastText: "Yes",
+    lastSeen: "8:51 PM",
+    selected: false,
+  },
+  {
+    name: "HDFC",
+    lastText: "Take a lone",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Test 2",
+    lastText: "Testing okk how test test 123",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Balram Rathore",
+    lastText: "Hey there testing whatsapp",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Dev Stack",
+    lastText: "DevStack testing whatsapp",
+    lastSeen: "8:51 PM",
+    selected: false,
+  },
+  {
+    name: "Test 1",
+    lastText: "Testing okk how test test 123",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
+  {
+    name: "Test 2",
+    lastText: "Testing okk how test test 123",
+    lastSeen: "4:21 PM",
+    selected: false,
+  },
 ];
 
-// Componente principal ContactList
 export default function ContactList() {
   return (
     <Box height="100%" width="30%" overflow="hidden">
-      {/* Componente CustomAppBar */}
       <CustomAppBar>
         <Box
           width="100%"
@@ -45,7 +101,6 @@ export default function ContactList() {
           <Avatar />
 
           <Box display="flex">
-            {/* Ícone DonutLarge */}
             <IconButton
               onClick={() => {}}
               sx={{
@@ -58,8 +113,6 @@ export default function ContactList() {
                 }}
               />
             </IconButton>
-
-            {/* Ícone Chat */}
             <IconButton
               onClick={() => {}}
               sx={{
@@ -72,14 +125,10 @@ export default function ContactList() {
                 }}
               />
             </IconButton>
-
-            {/* Componente CustomMenuButton */}
             <CustomMenuButton menuItems={leftPanelMenuItem} />
           </Box>
         </Box>
       </CustomAppBar>
-
-      {/* Barra de pesquisa e filtro */}
       <Box
         sx={{
           background: "#101b20",
@@ -97,7 +146,6 @@ export default function ContactList() {
           flex={1}
           alignItems="center"
         >
-          {/* Ícone de pesquisa */}
           <IconButton onClick={() => {}}>
             <SearchIcon
               sx={{
@@ -107,8 +155,6 @@ export default function ContactList() {
               }}
             />
           </IconButton>
-
-          {/* Campo de entrada de pesquisa */}
           <Input
             fullWidth
             disableUnderline
@@ -121,8 +167,6 @@ export default function ContactList() {
             }}
           />
         </Box>
-
-        {/* Ícone de filtro */}
         <IconButton onClick={() => {}}>
           <FilterListIcon
             sx={{
@@ -133,8 +177,6 @@ export default function ContactList() {
           />
         </IconButton>
       </Box>
-
-      {/* Lista de chats */}
       <Box
         overflow="auto"
         height="90%"
@@ -142,7 +184,7 @@ export default function ContactList() {
           background: "#101b20",
         }}
       >
-        {localChats.map((item) => {
+        {localChats.map((item: ChatCardType) => {
           return <ChatCard item={item} />;
         })}
         <Box pt="50px" />

@@ -30,11 +30,6 @@ const Chat = () => {
     setNewMessage('');
   };
 
-  // Função para receber mensagens de outro cliente
-  const receiveMessage = (message) => {
-    setMessages((prevMessages) => [...prevMessages, { text: message.text, sender: 'other' }]);
-  };
-
   return (
     <Box height="100%" display="flex" flexDirection="column">
       <CustomAppBar>
