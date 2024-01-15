@@ -10,14 +10,22 @@ const Signup = () => {
       password: '',
       repeatpassword: '',
     };
+    // const [username, setUsername] = useState('');
+
   
     const validationSchema = Yup.object({
       username: Yup.string().required('Campo obrigatório'),
       password: Yup.string().required('Campo obrigatório'),
       repeatpassword: Yup.string().required('Campo obrigatório'),
     });
-  
+     // Store the username in local storage
+
+
     const handleSubmit = (values, { setSubmitting }) => {
+      // localStorage.setItem('username', values.username);
+      sessionStorage.setItem('username', values.username);
+
+      // localStorage.setItem('username', username);
       // Lógica de autenticação aqui
       console.log('Valores submetidos:', values);
       setSubmitting(false);
@@ -55,6 +63,9 @@ const Signup = () => {
           <div className="link">
           <p>
           <Link to="/Login">Login</Link>
+          </p>
+          <p>
+          <Link to="/chat">Chat</Link>
           </p>
             {/* <p><a href="./Singup" target="_new" rel="noopener noreferrer">Sign up</a></p> */}
         </div>

@@ -8,13 +8,13 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* <Route path="/login" element={<Login />} /> */}
         <Route path="/Signup" element={<Signup />} />
         <Route path="/chat" element={<Chat />} />
         {/* Definir a página de login como a página inicial */}
         <Route
           path="/"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/Signup" replace />}
         />
       </Routes>
     </Router>
