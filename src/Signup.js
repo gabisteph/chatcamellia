@@ -19,7 +19,7 @@ const Signup = () => {
   
     const handleSubmit = async (values, { setSubmitting }) => {
       try {
-        const apiUrl = '/register';  // Centralize a URL da API
+        const apiUrl = 'http://localhost:5000/register';   // URL da API
   
         const response = await fetch(apiUrl, {
           method: 'POST',

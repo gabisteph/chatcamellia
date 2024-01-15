@@ -8,86 +8,58 @@ import { leftPanelMenuItem } from "./assets/utils/constant.js";
 import ChatIcon from "@mui/icons-material/Chat";
 import DonutLargeIcon from "@mui/icons-material/DonutLarge";
 import ChatCard from "./foundation/ChatCard/ChatCard.jsx";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
 import { ChatCardType } from "./assets/utils/LeftPanel.types.js";
-
-const localChats: ChatCardType[] = [
-  {
-    name: "Balram",
-    lastText: "Hey there testing whatsapp",
-    lastSeen: "4:21 PM",
-    selected: true,
-  },
-  {
-    name: "Dev Stack",
-    lastText: "DevStack testing whatsapp",
-    lastSeen: "8:51 PM",
-    selected: false,
-  },
-  {
-    name: "Test 1",
-    lastText: "Testing okk how test test 123",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Test 2",
-    lastText: "Testing Yes",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Test 3",
-    lastText: "Ok Tested",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Test 4",
-    lastText: "Yes",
-    lastSeen: "8:51 PM",
-    selected: false,
-  },
-  {
-    name: "HDFC",
-    lastText: "Take a lone",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Test 2",
-    lastText: "Testing okk how test test 123",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Balram Rathore",
-    lastText: "Hey there testing whatsapp",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Dev Stack",
-    lastText: "DevStack testing whatsapp",
-    lastSeen: "8:51 PM",
-    selected: false,
-  },
-  {
-    name: "Test 1",
-    lastText: "Testing okk how test test 123",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-  {
-    name: "Test 2",
-    lastText: "Testing okk how test test 123",
-    lastSeen: "4:21 PM",
-    selected: false,
-  },
-];
+import React, { useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
 
 export default function ContactList() {
+  const [localChats, setLocalChats] = useState([]);
+  const [newUsername, setNewUsername] = useState("");
+
+  const handleAddUser = async () => {
+    if (newUsername.trim() === "") {
+      return;
+    }
+
+    const newUser = {
+      name: newUsername,
+      lastText: "New User",
+      lastSeen: "Just now",
+      selected: false,
+    };
+
+    // Adiciona o novo usuário à lista local
+    setLocalChats((prevChats) => [...prevChats, newUser]);
+
+    // Limpa o campo de nome de usuário
+    setNewUsername("");
+
+    // Realiza a requisição para buscar detalhes do novo usuário
+    try {
+      const response = await fetch(
+        `http://localhost:5000/users/search?username=${(newUser.name)}`,
+        {
+          method: "POST", // Mudança para método POST
+          headers: {
+            "Content-Type": "application/json", // Adição do cabeçalho Content-Type
+          },
+        }
+      );
+      const userData = await response.json();
+
+      if (response.ok) {
+        // Faça algo com os dados do usuário retornado pelo backend
+        console.log("Detalhes do usuário:", userData);
+      } else {
+        console.error("Erro ao buscar usuário:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar usuário:", error.message);
+    }
+  };
+
+
   return (
     <Box height="100%" width="30%" overflow="hidden">
       <CustomAppBar>
@@ -99,7 +71,6 @@ export default function ContactList() {
           alignItems="center"
         >
           <Avatar />
-
           <Box display="flex">
             <IconButton
               onClick={() => {}}
@@ -159,6 +130,8 @@ export default function ContactList() {
             fullWidth
             disableUnderline
             placeholder="Search or start a new chat"
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
             sx={{
               height: "35px",
               color: "white",
@@ -167,8 +140,8 @@ export default function ContactList() {
             }}
           />
         </Box>
-        <IconButton onClick={() => {}}>
-          <FilterListIcon
+        <IconButton onClick={handleAddUser}>
+          <AddIcon
             sx={{
               color: "#8696a1",
               height: "20px",

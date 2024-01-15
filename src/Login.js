@@ -2,7 +2,7 @@ import React from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import './Login.css';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const initialValues = {
@@ -15,9 +15,11 @@ const Login = () => {
     password: Yup.string().required('Campo obrigatório'),
   });
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const navigate = useNavigate();
+
+  const handleLogin = async (values, { setSubmitting }) => {
     try {
-      const apiUrl = '/login';  // Centralize a URL da API
+      const apiUrl = 'http://localhost:5000/login';
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -29,16 +31,21 @@ const Login = () => {
 
       if (!response.ok) {
         console.error('Erro ao fazer login:', response.statusText);
-        // Se possível, adicione uma lógica para exibir mensagens de erro mais detalhadas para o usuário.
+        // Tratar erros mais detalhadamente, se necessário
         return null;
       }
 
-      const data = await response.json();
-      console.log('Login bem-sucedido:', data);
-      // Lógica adicional após o login bem-sucedido, se necessário.
-      return data;
+      const userData = await response.json();
+
+      if (response.ok) {
+        // Navegar para a tela de home após o login bem-sucedido
+        navigate('/home', { replace: true });
+      }
+
+      return userData;
     } catch (error) {
       console.error('Erro ao fazer login:', error.message);
+      // Tratar erros mais detalhadamente, se necessário
       return null;
     } finally {
       setSubmitting(false);
@@ -49,7 +56,7 @@ const Login = () => {
     <Formik
       initialValues={initialValues}
       validationSchema={validationSchema}
-      onSubmit={handleSubmit}
+      onSubmit={handleLogin}
     >
       <Form className="auth">
         <div className="form-name">
@@ -66,7 +73,9 @@ const Login = () => {
         </div>
 
         <div className="form-group">
-          <button type="submit" className="submit-button">Entrar</button>
+          <button type="submit" className="submit-button">
+            Entrar
+          </button>
         </div>
         <div className="link">
           <p>
