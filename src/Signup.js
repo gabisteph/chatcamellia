@@ -1,84 +1,135 @@
-import React from 'react'
-import { Formik, Field, Form, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
-import './Login.css'
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { Formik, Field, Form, ErrorMessage } from 'formik'; // Add this line to import 'ErrorMessage'
+import * as Yup from 'yup';
+
+// Define the initial form values and validation schema
+const initialValues = {
+  username: '',
+  password: '',
+};
+
+const validationSchema = Yup.object().shape({
+  username: Yup.string().required('Username is required'),
+  password: Yup.string().required('Password is required'),
+});
 
 const Signup = () => {
-    const initialValues = {
-      username: '',
-      password: '',
-    };
-  
-    const validationSchema = Yup.object({
-      username: Yup.string().required('Campo obrigatório'),
-      password: Yup.string().required('Campo obrigatório'),
-    });
-  
-    const handleSubmit = async (values, { setSubmitting }) => {
-      try {
-        
-        const apiUrl = 'http://0.0.0.0:8000/register'; 
-        console.log('Enviando solicitação para:', apiUrl);
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(values),
-        });
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [registrationStatus, setRegistrationStatus] = useState(null);
 
-        console.log('Resposta do servidor:', response);
-
-        if (!response.ok) {
-          console.error('Erro ao criar usuário:', response.statusText);
-          // Adicione mais logs ou mensagens de erro conforme necessário
-          return null;
-        }
-  
-        const data = await response.json();
-        console.log('Usuário criado com sucesso:', data);
-        return data;
-      } catch (error) {
-        console.error('Erro ao criar usuário:', error.message);
-        return null;
-      } 
-    };
-  
-  
-    return (
-      <Formik
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
-        <Form className="auth">
-          <div className="form-name">
-            <label htmlFor="Login">Sign up</label>
-          </div>
-          <div className="form-group">
-            <Field type="text" id="username" name="username" placeholder="username" />
-            <ErrorMessage name="username" component="div" className="error-message" />
-          </div>
-  
-          <div className="form-group">
-            <Field type="password" id="password" name="password" placeholder="password"/>
-            <ErrorMessage name="password" component="div" className="error-message" />
-          </div>
-
-          <div className="form-group">
-           <button type="submit" className="submit-button">Register</button>
-          </div>
-
-          <div className="link">
-          <p>
-          <Link to="/Login">Login</Link>
-          </p>
-            {/* <p><a href="./Singup" target="_new" rel="noopener noreferrer">Sign up</a></p> */}
-        </div>
-        </Form>
-      </Formik>
-    );
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  const handleSubmit = (values) => {
+    // Handle form submission here
+  };
+
+  const handleSignup = async () => {
+    
+    try {
+      console.log('Request Body:', JSON.stringify(formData));
+      const response = await fetch('http://localhost:8000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+  
+      if (response.ok) {
+        const responseData = await response.json();
+        setRegistrationStatus('success');
+        sessionStorage.setItem('sid', responseData.sid);
+        sessionStorage.setItem('publicKey', responseData.publicKey);
+        sessionStorage.setItem('userId', responseData.userId);
+      } else {
+        setRegistrationStatus('error');
+        console.error('Signup error:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Signup error:', error.message);
+      setRegistrationStatus('error');
+    }
+  };
+  
+
+  useEffect(() => {
+    // Establish WebSocket connection using the stored SID
+    const socket = io('http://localhost:8000', {
+      transports: ['websocket'],
+      rejectUnauthorized: false,
+      query: {
+        sid: sessionStorage.getItem('sid'),
+      },
+    });
+
+    // Handle WebSocket events as needed
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  // Render your component JSX here
+  return (
+    <Formik
+      initialValues={initialValues}
+      validationSchema={validationSchema}
+      onSubmit={handleSubmit}
+    >
+    <div className="auth">
+      <div className="form-name">
+        <label htmlFor="Login">Sign up</label>
+      </div>
+      <div className="form-group">
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="username"
+          onChange={handleInputChange}
+        />
+        <div className="error-message">
+          {/* Display validation error if any */}
+          <ErrorMessage name="username" />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="password"
+          onChange={handleInputChange}
+        />
+        <div className="error-message">
+          {/* Display validation error if any */}
+          <ErrorMessage name="password" />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <button type="button" className="submit-button" onClick={handleSignup}>
+          Register
+        </button>
+      </div>
+
+      <div className="link">
+        <p>
+          {/* Display registration status */}
+          {registrationStatus === 'success' && <div>Registration successful!</div>}
+          {registrationStatus === 'error' && <div>Registration failed. Please try again.</div>}
+          {/* Link to login page */}
+          <Link to="/login">Login</Link>
+        </p>
+      </div>
+    </div>
+    </Formik>
+  );
+};
 
 export default Signup;

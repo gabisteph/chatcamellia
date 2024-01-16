@@ -47,7 +47,7 @@ export default function ContactList() {
 
   const fetchUsersOnline = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/users/online`);
+      const response = await fetch(`http://localhost:8000/users/online`);
       if (response.ok) {
         const onlineUsers = await response.json();
         setLocalChats(onlineUsers);
@@ -62,7 +62,7 @@ export default function ContactList() {
   const handleSearchUser = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/users/search?username=${newUsername}`
+        `http://localhost:8000/users/search?username=${newUsername}`
       );
   
       if (!response.ok) {
