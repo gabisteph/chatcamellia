@@ -22,7 +22,7 @@ const Chat = () => {
     width: "28px",
   };
 
-
+  // Pega daqui
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -313,7 +313,7 @@ const Chat = () => {
     console.log("Decrypted Message:", plainTextBuffer);
     return plainTextBuffer
 } 
-
+  // Essa função aqui é quando o usuário clica em um dos usuários da lista de contatos
   const handleUserClick = async (user) => {
     setCurrentChatUser(user.id_);
 
@@ -373,7 +373,7 @@ const Chat = () => {
       console.error("Error fetching public key:", error);
   }
 
-};
+};// até aquii
   function logoutUser() {
     // Clear all local storage
     localStorage.clear();
