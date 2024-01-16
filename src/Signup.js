@@ -8,19 +8,18 @@ const Signup = () => {
     const initialValues = {
       username: '',
       password: '',
-      repeatpassword: '',
     };
   
     const validationSchema = Yup.object({
       username: Yup.string().required('Campo obrigatório'),
       password: Yup.string().required('Campo obrigatório'),
-      repeatpassword: Yup.string().required('Campo obrigatório'),
     });
   
     const handleSubmit = async (values, { setSubmitting }) => {
       try {
-        const apiUrl = 'http://localhost:5000/register';   // URL da API
-  
+        
+        const apiUrl = 'http://0.0.0.0:8000/register'; 
+        console.log('Enviando solicitação para:', apiUrl);
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -28,10 +27,12 @@ const Signup = () => {
           },
           body: JSON.stringify(values),
         });
-  
+
+        console.log('Resposta do servidor:', response);
+
         if (!response.ok) {
           console.error('Erro ao criar usuário:', response.statusText);
-          // Se possível, adicione uma lógica para exibir mensagens de erro mais detalhadas para o usuário.
+          // Adicione mais logs ou mensagens de erro conforme necessário
           return null;
         }
   
@@ -41,10 +42,7 @@ const Signup = () => {
       } catch (error) {
         console.error('Erro ao criar usuário:', error.message);
         return null;
-      } finally {
-        // Remova console.log sensíveis
-        setSubmitting(false);
-      }
+      } 
     };
   
   
@@ -66,11 +64,6 @@ const Signup = () => {
           <div className="form-group">
             <Field type="password" id="password" name="password" placeholder="password"/>
             <ErrorMessage name="password" component="div" className="error-message" />
-          </div>
-
-          <div className="form-group">
-            <Field type="password" id="repeatpassword" name="repeatpassword" placeholder="repeat password"/>
-            <ErrorMessage name="repeatpassword" component="div" className="error-message" />
           </div>
 
           <div className="form-group">

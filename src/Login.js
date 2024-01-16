@@ -19,7 +19,7 @@ const Login = () => {
 
   const handleLogin = async (values, { setSubmitting }) => {
     try {
-      const apiUrl = 'http://localhost:5000/login';
+      const apiUrl = 'http://25.6.211.198:8000/login';
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -58,7 +58,7 @@ const Login = () => {
   // Função para notificar o backend sobre a mudança de status
   const notifyStatusChange = async (online) => {
     try {
-      const apiUrl = 'http://localhost:5000/status/change';
+      const apiUrl = 'http://25.6.211.198:8000/status/change';
 
       await fetch(apiUrl, {
         method: 'POST',
