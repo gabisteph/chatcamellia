@@ -38,6 +38,9 @@ const Login = () => {
       const userData = await response.json();
 
       if (response.ok) {
+        // Notificar o backend sobre a mudança de status
+        await notifyStatusChange(true);
+
         // Navegar para a tela de home após o login bem-sucedido
         navigate('/home', { replace: true });
       }
@@ -49,6 +52,24 @@ const Login = () => {
       return null;
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Função para notificar o backend sobre a mudança de status
+  const notifyStatusChange = async (online) => {
+    try {
+      const apiUrl = 'http://localhost:5000/status/change';
+
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ online }),
+      });
+    } catch (error) {
+      console.error('Erro ao notificar mudança de status:', error.message);
+      // Tratar erros mais detalhadamente, se necessário
     }
   };
 
