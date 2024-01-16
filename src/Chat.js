@@ -12,6 +12,7 @@ import MicIcon from "@mui/icons-material/Mic";
 import { io } from 'socket.io-client';
 import camellia from './camellia.js'
 import RSAHandler from './rsaKeyGeneration.js'
+import { useChat } from './hook/useChat.js';
 console.log('Imported camellia', camellia);
 
 
@@ -26,7 +27,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
-  const SERVER_URL = 'https://localhost:8000';
+  const SERVER_URL = 'http://localhost:8000';
   const socketRef = useRef(null);
   const [username, setUsername] = useState('');
   const [users, setUsers] = useState([]);/// Lista de usuários que vai sendo atualizada para exibir na tela
@@ -42,27 +43,55 @@ const Chat = () => {
   const [CurrentUserPublic, setCurrentUserPublic] = useState('')
   // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 
+  const { messages: contextMessage, setMessages: setContextMessage} = useChat()
+  
   useEffect(() => {
     socketRef.current = io(SERVER_URL, {
         transports: ["websocket"],
         rejectUnauthorized: false
     });
+
+    async function decryptMessages(text, key) {
+      const keyBuffer = base64ToArrayBuffer(key);
+      const privateKey = sessionStorage.getItem('privateKey');
+  
+      const privateKeyObject = JSON.parse(privateKey);
+  
+  // Import the key back into a CryptoKey
+      const importedPrivateKey = await window.crypto.subtle.importKey(
+                "jwk",
+                privateKeyObject,
+                { name: "RSA-OAEP", hash: { name: "SHA-256" } },
+                false,
+                ["decrypt"]
+            );
+  
+      const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
+      console.log('Decripted key:')
+      console.log(decryptedKey)
+      // Assuming 'text' is the encrypted message
+      const textBuffer = base64ToArrayBuffer(text);
+      const plainTextBuffer = camellia.decrypt(textBuffer, decryptedKey, "cbc", "\x05");
+      console.log('Camellia been executed successfully')
+      console.log("Decrypted Message:", plainTextBuffer);
+      return plainTextBuffer
+  } 
+
     // Essa função é a de cadastro 
     // Eu preciso do username
     // Preciso que as chaves rsa sejam geradas no login ou no cadastro
-    const handleUserRegistration = async () => {
+    function exportKey(key) {
+      return window.crypto.subtle.exportKey('jwk', key);
+      
+    }
+    const publishPublicKey = async () => {
     const storedUsername = sessionStorage.getItem('username');
     setUsername(storedUsername);
     console.log('Username:')
     console.log(storedUsername);
     const NewSid = sessionStorage.getItem('Sid');
 
-    function exportKey(key) {
-      return window.crypto.subtle.exportKey('jwk', key);
-      
-    }
-    
-      if (storedUsername && sid !== '');{
+    if (storedUsername && NewSid !== '');{
           setUsername(storedUsername);
   
           try {
@@ -77,41 +106,27 @@ const Chat = () => {
 
             // Store the exported key as a string
               sessionStorage.setItem('privateKey', JSON.stringify(exportedKeyPrivatekey));
-
+              const user_id = sessionStorage.getItem('userId');
               const ExportedPublicKey = await exportKey(keyPair.publicKey)
               // Preparing data to send
               const userRegisterData = JSON.stringify({
-                  username: storedUsername,
+                  user_id: user_id,
                   public_key: ExportedPublicKey, // Exporting publicKey in a usable format
-                  sid: NewSid
               });
               console.log(userRegisterData);
-              // Sending data to your server
-              const response = await fetch(`https://localhost:8000/register`, {
+              const response = await fetch(`https://localhost:8000/update-public-key/${user_id}`, {
                   method: 'POST',
                   headers: {
                       'Content-Type': 'application/json'
                   },
                   body: userRegisterData
               });
-  
-              if (response.ok) {
-                  const responseData = await response.json();
-                  const IdUser = responseData.id_
-                  setMyIdUser(IdUser)
-                  console.log('User registered')
-                  console.log(IdUser);
-                  // Process the response as needed
-                  console.log("Server response:", responseData);
-              } else {
-                  console.error("Failed to register user:", response.status);
-              }
-          } catch (error) {
-              console.error("Registration error:", error);
+            }
+            catch (error) {
+              console.error("error in publish public key:", error);
           }
-      }
-  }
-    
+          }
+        }
   function base64ToArrayBuffer(base64) {
     try {
         // base64 = base64.replace(/\s/g, ''); // Clean the base64 string
@@ -168,7 +183,7 @@ const Chat = () => {
       // Filter out the current user's data from the list
       console.log('received user list');
       console.log(usersList)
-      const storedUsername = localStorage.getItem('username');
+      const storedUsername = sessionStorage.getItem('username');
       const otherUsers = usersList.filter(user => user.username !== storedUsername);
       // Update the state with the list of other users
       setUsers(otherUsers);
@@ -176,17 +191,19 @@ const Chat = () => {
 
   });
     // Evento para receber o Sid
-    socketRef.current.on('getSid', (ReceivedSid) => {
-      console.log('Received sid: ' + ReceivedSid);
-      sessionStorage.setItem('Sid', ReceivedSid);
-      setSid(ReceivedSid);
-      handleUserRegistration()
+    socketRef.current.on('getSid', async (receivedSid) => {
+      console.log('Received sid: ' + receivedSid);
+      sessionStorage.setItem('Sid', receivedSid);
+      setSid(receivedSid);
+      // UserPublicKey()
+      await publishPublicKey()
     });
     return () => {
         if (socketRef.current) {
             socketRef.current.disconnect();
         }
     };
+
 }, []);
 
   function generateSymmetricKey() {
@@ -356,13 +373,13 @@ const Chat = () => {
   }
 
     try {
-      const response = await fetch(`https://localhost:8000/public-key/${user.id_}`);
+      const response = await fetch(`http://localhost:8000/public-key/${user.id_}`);
       if (response.ok) {
           const data = await response.json();
           const publicKey = data;
           setCurrentUserPublic(user.public_key)
           console.log("Public key changed")
-          console.log(publicKey.n)
+          console.log(publicKey?.n)
            // Assuming the response contains the public key
           // You can now use this publicKey for further operations
           console.log("Public Key for", user, ":", user.public_key);
@@ -391,6 +408,21 @@ const Chat = () => {
       <CustomAppBar>
         {/* ... (seu código existente para exibir informações do usuário) */}
       </CustomAppBar>
+      {/* <Box width="25%" bgcolor="#2b3943" overflowY="auto" minWidth="240px">
+        <Typography variant="h6" sx={{ color: "white", padding: "10px" }}>Users</Typography>
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {users.map((user, index) => (
+            <li key={index} style={{
+              padding: "10px",
+              backgroundColor: user === user.id_? "#394b59" : "transparent",
+              color: "white",
+              cursor: "pointer"
+            }} onClick={() => handleUserClick(user)}>
+              {user.username}
+            </li>
+          ))}
+        </ul>
+      </Box> */}
       <Box display="flex" flexDirection="column" flexGrow={1}>
       <Box flex={1} overflowY="auto">
         {messages.map((message, index) => (

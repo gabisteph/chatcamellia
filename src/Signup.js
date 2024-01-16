@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Formik, Field, Form, ErrorMessage } from 'formik'; // Add this line to import 'ErrorMessage'
 import * as Yup from 'yup';
-
+// import RSAHandler from './rsaKeyGeneration.js'
+import { useNavigate } from 'react-router-dom';
 // Define the initial form values and validation schema
 const initialValues = {
   username: '',
@@ -22,6 +23,7 @@ const Signup = () => {
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  const navigate = useNavigate(); 
   const handleSubmit = (values) => {
     // Handle form submission here
   };
@@ -38,13 +40,14 @@ const Signup = () => {
         body: JSON.stringify(formData),
       });
       
-  
+
       if (response.ok) {
         const responseData = await response.json();
         setRegistrationStatus('success');
-        sessionStorage.setItem('sid', responseData.sid);
-        sessionStorage.setItem('publicKey', responseData.publicKey);
-        sessionStorage.setItem('userId', responseData.userId);
+        // sessionStorage.setItem('sid', responseData.sid);
+        sessionStorage.setItem('userId', responseData.id_);
+        sessionStorage.setItem('username', responseData.username);
+        navigate('/home');
       } else {
         setRegistrationStatus('error');
         console.error('Signup error:', response.statusText);
@@ -56,22 +59,22 @@ const Signup = () => {
   };
   
 
-  useEffect(() => {
-    // Establish WebSocket connection using the stored SID
-    const socket = io('http://localhost:8000', {
-      transports: ['websocket'],
-      rejectUnauthorized: false,
-      query: {
-        sid: sessionStorage.getItem('sid'),
-      },
-    });
+  // useEffect(() => {
+  //   // Establish WebSocket connection using the stored SID
+  //   const socket = io('http://localhost:8000', {
+  //     transports: ['websocket'],
+  //     rejectUnauthorized: false,
+  //     // query: {
+  //     //   sid: sessionStorage.getItem('sid'),
+  //     // },
+  //   });
 
     // Handle WebSocket events as needed
 
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  //   return () => {
+  //     socket.disconnect();
+  //   };
+  // }, []);
 
   // Render your component JSX here
   return (
