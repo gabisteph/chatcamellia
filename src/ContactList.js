@@ -5,6 +5,9 @@ import { io } from 'socket.io-client'
 import camellia from './camellia.js'
 import RSAHandler from './rsaKeyGeneration.js'
 import { Typography } from '@mui/material'
+import { useUser } from './hook/useUser.js';
+import {useCurrentUser} from './hook/usersContactList.js';
+import { useChat } from './hook/useChat.js';
 
 const SERVER_URL = 'http://localhost:8000'
 export default function ContactList() {
@@ -14,12 +17,16 @@ export default function ContactList() {
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
     const [userSessions, setUserSessions] = useState({}) // State to manage user sessions
     const [currentSession, setCurrentSession] = useState(null)
-    const [currentUserPublic, setCurrentUserPublic] = useState(null)
-    const [messages, setMessages] = useState([])
+    // const [currentUserPublicKey, setCurrentUserPublic] = useState(null)
+    // const [messages, setMessages] = useState([])
     const [currentChatUser, setCurrentChatUser] = useState(null)
+    const {CurrentUser, setCurrentUser}= useCurrentUser()
 
     const socketRef = useRef()
+    const { CurrentUserPUblicKey, setCurrentUserPublicKey} = useUser()
 
+    const { messages, setMessages} = useChat()
+    
     useEffect(() => {
         socketRef.current = io(SERVER_URL, {
             transports: ['websocket'],
@@ -97,7 +104,7 @@ export default function ContactList() {
     }
 
     const handleUserClick = async (user) => {
-        setCurrentChatUser(user.id_)
+        setCurrentUser(user.id_)
 
         if (!doesSessionExist(user.id_)) {
             const sessionId = generateSessionId() // Your session ID generation logic
@@ -151,7 +158,7 @@ export default function ContactList() {
             if (response.ok) {
                 const data = await response.json()
                 const publicKey = data
-                setCurrentUserPublic(user.public_key)
+                setCurrentUserPublicKey(user.public_key)
                 console.log('Public key changed')
                 console.log(publicKey.n)
                 // Assuming the response contains the public key

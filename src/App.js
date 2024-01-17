@@ -5,9 +5,14 @@ import Signup from './Signup';
 import Home from './Home';
 import Chat from './Chat';
 import { ChatProvider } from './hook/useChat';
+import {ListProvider} from './hook/useUser';
+import {CurrentUserProvider} from './hook/usersContactList'
+
 
 function App() {
   return (
+    <ListProvider>
+    <CurrentUserProvider>
     <ChatProvider>
       <Router>
         <Routes>
@@ -21,7 +26,9 @@ function App() {
           />
         </Routes>
       </Router>
-    </ChatProvider>
+      </ChatProvider>
+      </CurrentUserProvider>
+      </ListProvider>
   );
 }
 

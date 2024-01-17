@@ -12,7 +12,10 @@ import MicIcon from "@mui/icons-material/Mic";
 import { io } from 'socket.io-client';
 import camellia from './camellia.js'
 import RSAHandler from './rsaKeyGeneration.js'
+import { useUser } from './hook/useUser.js';
 import { useChat } from './hook/useChat.js';
+import {useCurrentUser} from './hook/usersContactList.js';
+
 console.log('Imported camellia', camellia);
 
 
@@ -43,8 +46,11 @@ const Chat = () => {
   const [CurrentUserPublic, setCurrentUserPublic] = useState('')
   // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 
-  const { messages: contextMessage, setMessages: setContextMessage} = useChat()
-  
+  const { messages: contextMessage, setMessages: setContextList} = useChat()
+  const { CurrentUserPUblicKey, setCurrentUserPublicKey} = useUser()
+
+  const {CurrentUser, setCurrentUser} = useCurrentUser()
+  console.log('Current User Public Key:', CurrentUserPUblicKey);
   useEffect(() => {
     socketRef.current = io(SERVER_URL, {
         transports: ["websocket"],
@@ -90,6 +96,7 @@ const Chat = () => {
     console.log('Username:')
     console.log(storedUsername);
     const NewSid = sessionStorage.getItem('Sid');
+    setSid(NewSid)
 
     if (storedUsername && NewSid !== '');{
           setUsername(storedUsername);
@@ -108,14 +115,17 @@ const Chat = () => {
               sessionStorage.setItem('privateKey', JSON.stringify(exportedKeyPrivatekey));
               const user_id = sessionStorage.getItem('userId');
               const ExportedPublicKey = await exportKey(keyPair.publicKey)
+              setUserPublicKey(ExportedPublicKey)
+              // sessionStorage.setItem('', JSON.stringify(exportedKeyPrivatekey));
               // Preparing data to send
               const userRegisterData = JSON.stringify({
                   user_id: user_id,
                   public_key: ExportedPublicKey, // Exporting publicKey in a usable format
+                  sid: NewSid
               });
               console.log(userRegisterData);
-              const response = await fetch(`https://localhost:8000/update-public-key/${user_id}`, {
-                  method: 'POST',
+              const response = await fetch(`http://localhost:8000/update-public-key/${user_id}`, {
+                  method: 'PUT',
                   headers: {
                       'Content-Type': 'application/json'
                   },
@@ -268,15 +278,17 @@ const Chat = () => {
       iv      : Iv,
       pchar   : "\x05"
   };
-        
-    const ImportedKey = await importRsaKey(CurrentUserPublic, 'public')
+    console.log('CurrentUserPublic')
+    console.log(CurrentUserPublic)
+    console.log(CurrentUserPUblicKey)
+    const ImportedKey = await importRsaKey(CurrentUserPUblicKey, 'public')
     const encrypted_public_key = await RSAHandler.rsaEncrypt(ImportedKey,symmetricKeyBuffer)
     const encryptedPublicKeyBase64 = bufferToBase64(encrypted_public_key);
     const encryptedMessage = camellia.encrypt( myHash );
     const messageData = {
       text: encryptedMessage,
       from: myIdUser,
-      to: currentChatUser, // Replace with logic to determine the target user
+      to: CurrentUser, // Replace with logic to determine the target user
       key: encryptedPublicKeyBase64,
       iv: Iv,
       session_id: currentSession
@@ -324,8 +336,8 @@ const Chat = () => {
     console.log('Decripted key:')
     console.log(decryptedKey)
     // Assuming 'text' is the encrypted message
-    const textBuffer = base64ToArrayBuffer(text);
-    const plainTextBuffer = camellia.decrypt(textBuffer, decryptedKey, "cbc", "\x05");
+    // const textBuffer = base64ToArrayBuffer(text);
+    const plainTextBuffer = camellia.decrypt(text, decryptedKey, "cbc", "\x05");
     console.log('Camellia been executed successfully')
     console.log("Decrypted Message:", plainTextBuffer);
     return plainTextBuffer
