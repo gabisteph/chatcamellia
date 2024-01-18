@@ -15,6 +15,7 @@ import RSAHandler from './rsaKeyGeneration.js'
 import { useUser } from './hook/useUser.js';
 import { useChat } from './hook/useChat.js';
 import {useCurrentUser} from './hook/usersContactList.js';
+import {useSession} from './hook/useSession.js';
 
 console.log('Imported camellia', camellia);
 
@@ -39,7 +40,7 @@ const Chat = () => {
   const [publicKey, setPublicKey] = useState('')
   const [sid, setSid] = useState('');
   const [userSessions, setUserSessions] = useState({});
-  const [currentSession, setCurrentSession] = useState('')
+  // const [currentSession, setCurrentSession] = useState('')
   const [myIdUser, setMyIdUser] = useState('')
   const [CurrentSymmetricKey, setSymmetricKey] = useState('') 
   const [UserPublicKey, setUserPublicKey] = useState('')
@@ -48,20 +49,23 @@ const Chat = () => {
 
   const { messages: contextMessage, setMessages: setContextList} = useChat()
   const { CurrentUserPUblicKey, setCurrentUserPublicKey} = useUser()
-
+  const {currentSession, setCurrentSession} = useSession()
   const {CurrentUser, setCurrentUser} = useCurrentUser()
-  console.log('Current User Public Key:', CurrentUserPUblicKey);
+
   useEffect(() => {
     socketRef.current = io(SERVER_URL, {
         transports: ["websocket"],
         rejectUnauthorized: false
     });
-
+    const user_id = sessionStorage.getItem('userId');
+    setMyIdUser(user_id);
     async function decryptMessages(text, key) {
       const keyBuffer = base64ToArrayBuffer(key);
+      console.log('decrypted key buffer', keyBuffer);
       const privateKey = sessionStorage.getItem('privateKey');
-  
+      console.log('private key', privateKey);
       const privateKeyObject = JSON.parse(privateKey);
+      console.log('private key object', privateKeyObject)
   
   // Import the key back into a CryptoKey
       const importedPrivateKey = await window.crypto.subtle.importKey(
@@ -71,13 +75,13 @@ const Chat = () => {
                 false,
                 ["decrypt"]
             );
-  
+      console.log('import key object', importedPrivateKey)
       const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
       console.log('Decripted key:')
       console.log(decryptedKey)
       // Assuming 'text' is the encrypted message
-      const textBuffer = base64ToArrayBuffer(text);
-      const plainTextBuffer = camellia.decrypt(textBuffer, decryptedKey, "cbc", "\x05");
+      // const textBuffer = base64ToArrayBuffer(text);
+      const plainTextBuffer = camellia.decrypt(text, decryptedKey, "cbc", "\x05");
       console.log('Camellia been executed successfully')
       console.log("Decrypted Message:", plainTextBuffer);
       return plainTextBuffer
@@ -175,7 +179,23 @@ const Chat = () => {
         }));
           console.log('received symmetric key')
           console.log(key)
-          const plainText = decryptMessages(text, key)
+          setCurrentUser(sender)
+          const plainText = await decryptMessages(text, key)
+          const response = await fetch(
+            `http://localhost:8000/public-key/${sender}`
+        )
+        if (response.ok) {
+            const data = await response.json()
+            const publicKey = data.public_key
+            setCurrentUser(data.id_)
+            setCurrentUserPublicKey(publicKey)
+        } 
+        else {
+            console.error('Failed to fetch public key:', response.status)
+        }
+          console.log("Decrypted message:")
+          console.log(plainText)
+
       
           return { ...message, text: plainText };
       }));
@@ -219,13 +239,13 @@ const Chat = () => {
   function generateSymmetricKey() {
     return window.crypto.getRandomValues(new Uint8Array(32));
   }
-  function generateSessionId() {
+//   function generateSessionId() {
 
-    return crypto.randomUUID();
-  }
-  const doesSessionExist = (username) => {
-    return userSessions.hasOwnProperty(username);
-};
+//     return crypto.randomUUID();
+//   }
+//   const doesSessionExist = (username) => {
+//     return userSessions.hasOwnProperty(username);
+// };
   //Essa função é para importar a chave criptografada no formato CryptoKey
   async function importRsaKey(jwkKey, keyType) {
     let algorithm;
@@ -278,8 +298,7 @@ const Chat = () => {
       iv      : Iv,
       pchar   : "\x05"
   };
-    console.log('CurrentUserPublic')
-    console.log(CurrentUserPublic)
+    console.log('Current User Public')
     console.log(CurrentUserPUblicKey)
     const ImportedKey = await importRsaKey(CurrentUserPUblicKey, 'public')
     const encrypted_public_key = await RSAHandler.rsaEncrypt(ImportedKey,symmetricKeyBuffer)
@@ -304,105 +323,105 @@ const Chat = () => {
 
   };
 
-  const getSessionIdById = (userId) => {
-    return userSessions[userId] 
-  }
-  function base64ToArrayBuffer(base64) {
-    const binaryString = window.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
+//   const getSessionIdById = (userId) => {
+//     return userSessions[userId] 
+//   }
+//   function base64ToArrayBuffer(base64) {
+//     const binaryString = window.atob(base64);
+//     const len = binaryString.length;
+//     const bytes = new Uint8Array(len);
+//     for (let i = 0; i < len; i++) {
+//         bytes[i] = binaryString.charCodeAt(i);
+//     }
+//     return bytes.buffer;
 
-}   
-  async function decryptMessages(text, key) {
-    const keyBuffer = base64ToArrayBuffer(key);
-    const privateKey = sessionStorage.getItem('privateKey');
+// }   
+//   async function decryptMessages(text, key) {
+//     const keyBuffer = base64ToArrayBuffer(key);
+//     const privateKey = sessionStorage.getItem('privateKey');
 
-    const privateKeyObject = JSON.parse(privateKey);
+//     const privateKeyObject = JSON.parse(privateKey);
 
-// Import the key back into a CryptoKey
-    const importedPrivateKey = await window.crypto.subtle.importKey(
-              "jwk",
-              privateKeyObject,
-              { name: "RSA-OAEP", hash: { name: "SHA-256" } },
-              false,
-              ["decrypt"]
-          );
+// // Import the key back into a CryptoKey
+//     const importedPrivateKey = await window.crypto.subtle.importKey(
+//               "jwk",
+//               privateKeyObject,
+//               { name: "RSA-OAEP", hash: { name: "SHA-256" } },
+//               false,
+//               ["decrypt"]
+//           );
 
-    const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
-    console.log('Decripted key:')
-    console.log(decryptedKey)
-    // Assuming 'text' is the encrypted message
-    // const textBuffer = base64ToArrayBuffer(text);
-    const plainTextBuffer = camellia.decrypt(text, decryptedKey, "cbc", "\x05");
-    console.log('Camellia been executed successfully')
-    console.log("Decrypted Message:", plainTextBuffer);
-    return plainTextBuffer
-} 
+//     const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
+//     console.log('Decripted key:')
+//     console.log(decryptedKey)
+//     // Assuming 'text' is the encrypted message
+//     // const textBuffer = base64ToArrayBuffer(text);
+//     const plainTextBuffer = camellia.decrypt(text, decryptedKey, "cbc", "\x05");
+//     console.log('Camellia been executed successfully')
+//     console.log("Decrypted Message:", plainTextBuffer);
+//     return plainTextBuffer
+// } 
   // Essa função aqui é quando o usuário clica em um dos usuários da lista de contatos
-  const handleUserClick = async (user) => {
-    setCurrentChatUser(user.id_);
+//   const handleUserClick = async (user) => {
+//     setCurrentChatUser(user.id_);
 
-    if (!doesSessionExist(user.id_)) {
-      const sessionId = generateSessionId(); // Your session ID generation logic
-      setUserSessions(prevSessions => ({
-          ...prevSessions,
-          [user.id_]: sessionId
-      }));
-      setCurrentSession(sessionId);
-      console.log('Session')
-      console.log(sessionId);
-  } else {
-      const sessionId = getSessionIdById(user.id_);
-      setCurrentSession(sessionId);
-  }
-    try {
-      const getSessionIdById = (userId) => {
-        return userSessions[userId] 
-      }
-      const sessionId = getSessionIdById(user.id_);
-      const response = await fetch(`https://localhost:8000/history/${sessionId}`);
-      if (response.ok) {
-          const data = await response.json();
-          const decryptedMessages = await Promise.all(data.map(async (message) => {
-            const decryptedText = await decryptMessages(message.text, message.key);
-            return {
-                ...message,
-                text: decryptedText
-            };
-          }));
-          setMessages(decryptedMessages);
+//     if (!doesSessionExist(user.id_)) {
+//       const sessionId = generateSessionId(); // Your session ID generation logic
+//       setUserSessions(prevSessions => ({
+//           ...prevSessions,
+//           [user.id_]: sessionId
+//       }));
+//       setCurrentSession(sessionId);
+//       console.log('Session')
+//       console.log(sessionId);
+//   } else {
+//       const sessionId = getSessionIdById(user.id_);
+//       setCurrentSession(sessionId);
+//   }
+//     try {
+//       const getSessionIdById = (userId) => {
+//         return userSessions[userId] 
+//       }
+//       const sessionId = getSessionIdById(user.id_);
+//       const response = await fetch(`https://localhost:8000/history/${sessionId}`);
+//       if (response.ok) {
+//           const data = await response.json();
+//           const decryptedMessages = await Promise.all(data.map(async (message) => {
+//             const decryptedText = await decryptMessages(message.text, message.key);
+//             return {
+//                 ...message,
+//                 text: decryptedText
+//             };
+//           }));
+//           setMessages(decryptedMessages);
 
-          // You can now use this publicKey for further operations
-      } else {
-          console.error("History:", response.status);
-      }
-  } catch (error) {
-      console.error("Error fetching history:", error);
-  }
+//           // You can now use this publicKey for further operations
+//       } else {
+//           console.error("History:", response.status);
+//       }
+//   } catch (error) {
+//       console.error("Error fetching history:", error);
+//   }
 
-    try {
-      const response = await fetch(`http://localhost:8000/public-key/${user.id_}`);
-      if (response.ok) {
-          const data = await response.json();
-          const publicKey = data;
-          setCurrentUserPublic(user.public_key)
-          console.log("Public key changed")
-          console.log(publicKey?.n)
-           // Assuming the response contains the public key
-          // You can now use this publicKey for further operations
-          console.log("Public Key for", user, ":", user.public_key);
-      } else {
-          console.error("Failed to fetch public key:", response.status);
-      }
-  } catch (error) {
-      console.error("Error fetching public key:", error);
-  }
+//     try {
+//       const response = await fetch(`http://localhost:8000/public-key/${user.id_}`);
+//       if (response.ok) {
+//           const data = await response.json();
+//           const publicKey = data;
+//           setCurrentUserPublic(user.public_key)
+//           console.log("Public key changed")
+//           console.log(publicKey?.n)
+//            // Assuming the response contains the public key
+//           // You can now use this publicKey for further operations
+//           console.log("Public Key for", user, ":", user.public_key);
+//       } else {
+//           console.error("Failed to fetch public key:", response.status);
+//       }
+//   } catch (error) {
+//       console.error("Error fetching public key:", error);
+//   }
 
-};// até aquii
+// };// até aquii
   function logoutUser() {
     // Clear all local storage
     localStorage.clear();
@@ -420,21 +439,6 @@ const Chat = () => {
       <CustomAppBar>
         {/* ... (seu código existente para exibir informações do usuário) */}
       </CustomAppBar>
-      {/* <Box width="25%" bgcolor="#2b3943" overflowY="auto" minWidth="240px">
-        <Typography variant="h6" sx={{ color: "white", padding: "10px" }}>Users</Typography>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {users.map((user, index) => (
-            <li key={index} style={{
-              padding: "10px",
-              backgroundColor: user === user.id_? "#394b59" : "transparent",
-              color: "white",
-              cursor: "pointer"
-            }} onClick={() => handleUserClick(user)}>
-              {user.username}
-            </li>
-          ))}
-        </ul>
-      </Box> */}
       <Box display="flex" flexDirection="column" flexGrow={1}>
       <Box flex={1} overflowY="auto">
         {messages.map((message, index) => (
@@ -456,6 +460,10 @@ const Chat = () => {
               <Typography variant="body1" sx={{ wordWrap: 'break-word' }}>
                 {message.text}
               </Typography>
+              {/* <Typography variant="body1" sx={{ wordWrap: 'break-word' }}>
+                {message.text instanceof Promise ? 'Loading...' : message.text}
+            </Typography> */}
+
             </Box>
             {message.sender === 'user' ? (
               <Avatar sx={{ ml: 1 }} />

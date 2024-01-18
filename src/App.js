@@ -7,10 +7,11 @@ import Chat from './Chat';
 import { ChatProvider } from './hook/useChat';
 import {ListProvider} from './hook/useUser';
 import {CurrentUserProvider} from './hook/usersContactList'
-
+import { SessionProvider } from './hook/useSession';
 
 function App() {
   return (
+    <SessionProvider>
     <ListProvider>
     <CurrentUserProvider>
     <ChatProvider>
@@ -29,6 +30,7 @@ function App() {
       </ChatProvider>
       </CurrentUserProvider>
       </ListProvider>
+      </SessionProvider>
   );
 }
 
