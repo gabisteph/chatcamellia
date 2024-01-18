@@ -245,7 +245,8 @@ export default function ContactList() {
                                 cursor: 'pointer',
                                 borderTop: 'none',
                                 borderRight: 'none',
-                                borderColor: "#9c6fe487", 
+                                borderColor: "#9c6fe487",
+                                fontFamily:'Poppins', 
                             }}
                             onClick={() => handleUserClick(user)}
                         >
