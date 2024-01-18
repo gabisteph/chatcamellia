@@ -422,23 +422,11 @@ const Chat = () => {
 //   }
 
 // };// até aquii
-  function logoutUser() {
-    // Clear all local storage
-    localStorage.clear();
-
-    // ... additional logout logic
-  }
 
 
 
   return (
-    <Box height="100%" display="flex" flexDirection="column">
-    
-     <button onClick={logoutUser}>Logout</button>
-     <button onClick={username}></button>
-      <CustomAppBar>
-        {/* ... (seu código existente para exibir informações do usuário) */}
-      </CustomAppBar>
+    <Box height="100%" width= "100%"display="flex" flexDirection="column" >
       <Box display="flex" flexDirection="column" flexGrow={1}>
       <Box flex={1} overflowY="auto">
         {messages.map((message, index) => (
@@ -451,7 +439,7 @@ const Chat = () => {
           >
             {message.sender === 'user' ? null : <Avatar />}
             <Box
-              bgcolor={message.sender === 'user' ? '#2b3943' : '#394b59'}
+              bgcolor={message.sender === 'user' ? '#9c6fe487' : '#9C6FE4'}
               color="white"
               borderRadius="6px"
               p={1}
@@ -476,45 +464,32 @@ const Chat = () => {
            alignItems="center"
            display="flex"
            sx={{
-             background: "#1C1D21",
+             background: "#9c6fe487",
              padding: "0px 15px",
-             borderTop: "1px solid #394b59" // Added a border for separation
+             borderTop: "1px solid #9c6fe487" // Added a border for separation
            }}
          >
-           <IconButton onClick={() => {}}>
-             <AttachFileIcon
-               sx={{
-                 ...globalIconStyle,
-                 transform: "rotateY(0deg) rotate(45deg)",
-               }}
-             />
-           </IconButton>
            <Box flex={1} pl="5px" pr="5px">
              <Input
                fullWidth
                disableUnderline
                placeholder="Type a message"
                sx={{
-                 background: "#2b3943",
+                 background: "#FFF",
                  height:"42px",
-     borderRadius: "6px",
-     color: "white",
-     padding: "0px 10px",
-     }}
-     value={newMessage}
-     onChange={(e) => setNewMessage(e.target.value)}
-     onKeyDown={(e) => {
-     if (e.key === 'Enter') {
-     sendMessage();
-     }
-     }}
-     />
-     </Box>
-     <IconButton onClick={sendMessage}>
-     <MicIcon sx={globalIconStyle} />
-     </IconButton>
-     </Box>
-     </Box>
+                 borderRadius: "6px",
+                 color: "black",
+                 padding: "0px 10px",
+                }}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                sendMessage();
+                }}}/>
+              </Box>
+              </Box>
+              </Box>
   );
 };
 

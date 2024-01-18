@@ -6,7 +6,7 @@ function CustomAppBar({ children }) {
     <Box
       height="63px"
       sx={{
-        background: "#1f2c33",
+        background: "#6f549a",
         padding: "0px 20px",
       }}
     >

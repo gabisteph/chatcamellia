@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box'
-import CustomAppBar from './foundation/CustomAppBar/CustomAppBar.jsx'
 import React, { useEffect, useState, useRef } from 'react'
 import { io } from 'socket.io-client'
 import camellia from './camellia.js'
@@ -9,6 +8,7 @@ import { useUser } from './hook/useUser.js';
 import {useCurrentUser} from './hook/usersContactList.js';
 import { useChat } from './hook/useChat.js';
 import {useSession} from './hook/useSession.js';
+import ContactsIcon from '@mui/icons-material/Contacts';
 
 const SERVER_URL = 'http://localhost:8000'
 export default function ContactList() {
@@ -215,18 +215,21 @@ export default function ContactList() {
 
     return (
         <Box height="100%" width="30%" overflow="hidden">
-            <CustomAppBar>{/* ... (the rest of your code) */}</CustomAppBar>
             <Box
-                width="25%"
-                bgcolor="#2b3943"
+                bgcolor="#9c6fe487"
                 overflowY="auto"
                 minWidth="240px"
+                borderRadius= "0px 0px 0px 8px"
             >
+                
                 <Typography
-                    variant="h6"
-                    sx={{ color: 'white', padding: '10px' }}
+                    
+                    variant="h4"
+                    sx={{ color: "white", padding: '10px', fontFamily:'Poppins', alignItems:'center'}}
+                    
                 >
-                    Users
+                    <ContactsIcon sx={{ fontSize: 40, color: 'white' }} />  {/* Adiciona o ícone */}
+                       Contacts Online
                 </Typography>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     {users.map((user, index) => (
@@ -236,10 +239,13 @@ export default function ContactList() {
                                 padding: '10px',
                                 backgroundColor:
                                     selectedUserId === user.id
-                                        ? '#394b59'
+                                        ? '#FFF'
                                         : 'transparent',
-                                color: 'white',
+                                color: 'grey',
                                 cursor: 'pointer',
+                                borderTop: 'none',
+                                borderRight: 'none',
+                                borderColor: "#9c6fe487", 
                             }}
                             onClick={() => handleUserClick(user)}
                         >
