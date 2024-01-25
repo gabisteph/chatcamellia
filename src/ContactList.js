@@ -92,11 +92,9 @@ export default function ContactList() {
     }
     async function decryptMessages(text, key) {
         const keyBuffer = base64ToArrayBuffer(key)
-        console.log('key buffer', keyBuffer)
         const privateKey = sessionStorage.getItem('privateKey')
-        console.log('decrypted private key', privateKey)
         const privateKeyObject = JSON.parse(privateKey)
-
+        console.log('Chave privada', privateKeyObject)
         // Import the key back into a CryptoKey
         const importedPrivateKey = await window.crypto.subtle.importKey(
             'jwk',
@@ -105,28 +103,31 @@ export default function ContactList() {
             false,
             ['decrypt']
         )
-        console.log('Imported key:')
-        console.log(importedPrivateKey)
-        const decryptedKey = await RSAHandler.rsaDecrypt(
-            importedPrivateKey,
-            keyBuffer
-        )
-        // console.log(decryptedKey)
-        console.log('Decripted key:')
-        console.log(decryptedKey)
-    
+     
+        try{
 
+            const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
+            
+            const plainTextBuffer = camellia.decrypt(
+                text,
+                decryptedKey,
+                'cbc',
+                '\x05'
+            )
+            console.log('Camellia been executed successfully')
+            console.log('Decrypted Message:', plainTextBuffer)
+            return plainTextBuffer
+
+    
+        }
+        catch (error) {
+            console.error('Error decrypting the key:', error);
+            // return "Error: " + error
+            // Handle error or return a fallback
+        }
         // Assuming 'text' is the encrypted message
         // const textBuffer = base64ToArrayBuffer(text)
-        const plainTextBuffer = camellia.decrypt(
-            text,
-            decryptedKey,
-            'cbc',
-            '\x05'
-        )
-        console.log('Camellia been executed successfully')
-        console.log('Decrypted Message:', plainTextBuffer)
-        return plainTextBuffer
+        
     }
 
     const handleUserClick = async (user) => {
@@ -146,15 +147,15 @@ export default function ContactList() {
             setCurrentSession(sessionId)
         }
         try {
-            const getSessionIdById = (userId) => {
-                return userSessions[userId]
-            }
-            const sessionId = getSessionIdById(user.id_)
-            setCurrentSession(sessionId)
+            // const getSessionIdById = (userId) => {
+            //     return userSessions[userId]
+            // }
+            // const sessionId = getSessionIdById(user.id_)
+            // setCurrentSession(sessionId)
             console.log('Session id')
-            console.log(sessionId)
+            console.log(currentSession)
             const response = await fetch(
-                `http://localhost:8000/history/${sessionId}`
+                `http://localhost:8000/history/${currentSession}`
             )
             if (response.ok) {
                 const data = await response.json()
@@ -162,21 +163,23 @@ export default function ContactList() {
                 if (data.length > 0) {
                 const decryptedMessages = await Promise.all(
                     data.map(async (message) => {
+                        console.log("mensagem do historico:")
+                        console.log(message.text)
+                        console.log("Chave simétrica criptografada")
+                        console.log(message.key)
+                        const {text, key} = message
                         const decryptedText = await decryptMessages(
-                            message.text,
-                            message.key
+                            text,
+                            key
                         )
                         console.log('decryption function was executed')
                         console.log(decryptedText)
-                        return {
-                            ...message,
-                            text: decryptedText,
-                        }
+                        return decryptedText
                     })
                 )
                 console.log("Messages from history")
                 console.log(decryptedMessages)
-                setMessages(prevMessages => [...prevMessages, ...decryptedMessages]);
+                setMessages(decryptedMessages);
 
                 // setMessages(decryptedMessages)
                 }
