@@ -28,7 +28,7 @@ const Chat = () => {
   };
 
   // Pega daqui
-  const [messages, setMessages] = useState([]);
+  // const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
   const SERVER_URL = 'http://localhost:8000';
@@ -39,19 +39,20 @@ const Chat = () => {
   const [privateKey, setPrivateKey] = useState('')
   const [publicKey, setPublicKey] = useState('')
   const [sid, setSid] = useState('');
-  const [userSessions, setUserSessions] = useState({});
+  // const [userSessions, setUserSessions] = useState({});
   // const [currentSession, setCurrentSession] = useState('')
   const [myIdUser, setMyIdUser] = useState('')
   const [CurrentSymmetricKey, setSymmetricKey] = useState('') 
-  const [UserPublicKey, setUserPublicKey] = useState('')
+  const [MyUserPublicKey, setUserPublicKey] = useState('')
   const [CurrentUserPublic, setCurrentUserPublic] = useState('')
+  const [groups, setGroups] = useState('')
   // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 
-  const { messages: contextMessage, setMessages: setContextList} = useChat()
+  const { messages, setMessages} = useChat()
   const { CurrentUserPUblicKey, setCurrentUserPublicKey} = useUser()
-  const {currentSession, setCurrentSession} = useSession()
   const {CurrentUser, setCurrentUser} = useCurrentUser()
-
+  const {currentSession, setCurrentSession, userSessions, setUserSessions} = useSession()
+  
   useEffect(() => {
     socketRef.current = io(SERVER_URL, {
         transports: ["websocket"],
@@ -119,6 +120,8 @@ const Chat = () => {
             // Store the exported key as a string
               sessionStorage.setItem('privateKey', JSON.stringify(exportedKeyPrivatekey));
               const user_id = sessionStorage.getItem('userId');
+              console.log("userId: ", user_id)
+              console.log(user_id)
               const ExportedPublicKey = await exportKey(keyPair.publicKey)
               setUserPublicKey(ExportedPublicKey)
               // sessionStorage.setItem('', JSON.stringify(exportedKeyPrivatekey));
@@ -170,13 +173,14 @@ const Chat = () => {
     //Esse aqui é o evento que recebe as mensagens de algum usuário 
     socketRef.current.on('clientMessage', async (incomingMessages) => {
       const decryptedMessages = await Promise.all(incomingMessages.map(async (message) => {
-          const { text, key, recipient_sid, sender, sessionId,  } = message;
+          const { text, key, recipient_sid, sender, session_id } = message;
           setUserSessions(prevSessions => ({
             ...prevSessions,
-            [sender]: sessionId
+            [sender]: session_id
         }));
+          userSessions[sender] = session_id
           console.log("Recebendo menssage")
-          setCurrentSession(sessionId)
+          setCurrentSession(session_id)
           console.log('Chave simetrica recebida')
           console.log(key)
           setCurrentUser(sender)
@@ -220,6 +224,7 @@ const Chat = () => {
       // socketRef.current.off('userList');
 
   });
+
     // Evento para receber o Sid
     socketRef.current.on('getSid', async (receivedSid) => {
       console.log('Received sid: ' + receivedSid);
@@ -231,10 +236,19 @@ const Chat = () => {
     return () => {
         if (socketRef.current) {
             socketRef.current.disconnect();
+            setUsers([])
         }
     };
 
+    function createGroup(groupName)  {
+      socketRef.join(groupName)
+
+    }
+      
+
 }, []);
+
+
 
   function generateSymmetricKey() {
     return window.crypto.getRandomValues(new Uint8Array(32));
@@ -304,12 +318,19 @@ const Chat = () => {
     const encryptedPublicKeyBase64 = bufferToBase64(encrypted_public_key);
     console.log("chave simetrica enviada")
     console.log(encryptedPublicKeyBase64)
+
+    // Criando cópia da chave simetrica criptografada para descriptografar no historico mais tarde
+    const senderImportedKey = await importRsaKey(MyUserPublicKey, 'public');  
+    const encryptedSymmetricKeyForSender = await RSAHandler.rsaEncrypt(senderImportedKey, symmetricKeyBuffer);
+    const encryptedSymmetricKeyForSenderBase64 = bufferToBase64(encryptedSymmetricKeyForSender);
+
     const encryptedMessage = camellia.encrypt( myHash );
     const messageData = {
       text: encryptedMessage,
       from: myIdUser,
       to: CurrentUser, // Replace with logic to determine the target user
       key: encryptedPublicKeyBase64,
+      sender_key: encryptedSymmetricKeyForSenderBase64,  // Key encrypted with sender's public key
       iv: Iv,
       session_id: currentSession
   };
@@ -318,7 +339,7 @@ const Chat = () => {
       socketRef.current.emit("message", messageData);
   }
 
-    const updatedMessages = [...messages, { text: newMessage, sender: 'user' }];
+    const updatedMessages = [...messages, { text: newMessage, sender: myIdUser }];
     setMessages(updatedMessages);
     setNewMessage('');
 
@@ -332,13 +353,13 @@ const Chat = () => {
           <Box
             key={index}
             display="flex"
-            justifyContent={message.sender === 'user' ? 'flex-end' : 'flex-start'}
+            justifyContent={message.sender === myIdUser ? 'flex-end' : 'flex-start'}
             alignItems="flex-end"
             mb={1}
           >
-            {message.sender === 'user' ? null : <Avatar />}
+            {message.sender === myIdUser ? null : <Avatar />}
             <Box
-              bgcolor={message.sender === 'user' ? '#9c6fe487' : '#9C6FE4'}
+              bgcolor={message.sender === myIdUser ? '#9c6fe487' : '#9C6FE4'}
               color="white"
               borderRadius="6px"
               p={1}
@@ -352,7 +373,7 @@ const Chat = () => {
             </Typography> */}
 
             </Box>
-            {message.sender === 'user' ? (
+            {message.sender === myIdUser ? (
               <Avatar sx={{ ml: 1 }} />
             ) : null}
           </Box>

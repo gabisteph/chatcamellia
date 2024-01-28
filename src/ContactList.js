@@ -16,7 +16,8 @@ export default function ContactList() {
     const [newUsername, setNewUsername] = useState('')
     const [users, setUsers] = useState([])
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
-    const [userSessions, setUserSessions] = useState({}) // State to manage user sessions
+    // const [userSessions, setUserSessions] = useState({}) // State to manage user sessions
+
     // const [currentSession, setCurrentSession] = useState(null)
     // const [currentUserPublicKey, setCurrentUserPublic] = useState(null)
     // const [messages, setMessages] = useState([])
@@ -25,7 +26,8 @@ export default function ContactList() {
 
     const socketRef = useRef()
     const { CurrentUserPUblicKey, setCurrentUserPublicKey} = useUser()
-    const {currentSession, setCurrentSession} = useSession()
+    // const {currentSession, setCurrentSession} = useSession()
+    const {currentSession, setCurrentSession, userSessions, setUserSessions} = useSession()
 
     const { messages, setMessages} = useChat()
     
@@ -64,7 +66,6 @@ export default function ContactList() {
     }
     function base64ToArrayBuffer(base64) {
         try {
-            // base64 = base64.replace(/\s/g, ''); // Clean the base64 string
             console.log("raw base64")
             console.log(base64)
             const cleanedBase64 = base64.trim().replace(/\s/g, '');
@@ -103,9 +104,7 @@ export default function ContactList() {
             false,
             ['decrypt']
         )
-     
         try{
-
             const decryptedKey = await RSAHandler.rsaDecrypt(importedPrivateKey, keyBuffer);
             
             const plainTextBuffer = camellia.decrypt(
@@ -132,13 +131,16 @@ export default function ContactList() {
 
     const handleUserClick = async (user) => {
         setCurrentUser(user.id_)
-
+        console.log('User clicked');
+        console.log(doesSessionExist(user.id_))
         if (!doesSessionExist(user.id_)) {
+            console.error('Session does not exist');
             const sessionId = generateSessionId() // Your session ID generation logic
-            setUserSessions((prevSessions) => ({
-                ...prevSessions,
-                [user.id_]: sessionId,
-            }))
+            userSessions[user.id_] = sessionId
+            // setUserSessions((prevSessions) => ({
+            //     ...prevSessions,
+            //     [user.id_]: sessionId,
+            // }))
             setCurrentSession(sessionId)
             console.log('Session')
             console.log(sessionId)
@@ -147,15 +149,18 @@ export default function ContactList() {
             setCurrentSession(sessionId)
         }
         try {
-            // const getSessionIdById = (userId) => {
-            //     return userSessions[userId]
-            // }
-            // const sessionId = getSessionIdById(user.id_)
-            // setCurrentSession(sessionId)
+            const getSessionIdById = (userId) => {
+                return userSessions[userId]
+            }
+            console.log(user.id_)
+            console.log(userSessions)
+            const sessionId = getSessionIdById(user.id_)
+            console.log(sessionId)
+            setCurrentSession(sessionId)
             console.log('Session id')
             console.log(currentSession)
             const response = await fetch(
-                `http://localhost:8000/history/${currentSession}`
+                `http://localhost:8000/history/${sessionId}`
             )
             if (response.ok) {
                 const data = await response.json()
@@ -167,14 +172,47 @@ export default function ContactList() {
                         console.log(message.text)
                         console.log("Chave simétrica criptografada")
                         console.log(message.key)
-                        const {text, key} = message
-                        const decryptedText = await decryptMessages(
-                            text,
-                            key
-                        )
-                        console.log('decryption function was executed')
-                        console.log(decryptedText)
-                        return decryptedText
+                        const {text, key, sender} = message
+                        if (sender == user.id_){
+                            const decryptedText = await decryptMessages(
+                                text,
+                                key
+                            )
+                            console.log('decryption function was executed')
+                            console.log(decryptedText)
+                            const depryptedMessage = {
+                                text: decryptedText,
+                                sender: sender
+                            }
+                            return depryptedMessage
+
+                        }
+                        else{
+                            const {text, key, sender, sender_key} = message
+                            const decryptedText = await decryptMessages(
+                                text,
+                                sender_key
+                            )
+                            console.log('decryption function was executed')
+                            console.log(decryptedText)
+                            const depryptedMessage = {
+                                text: decryptedText,
+                                sender: sender
+                            }
+                            return depryptedMessage
+                        }
+                    
+                        // const decryptedText = await decryptMessages(
+                        //     text,
+                        //     key
+                        // )
+                        // console.log('decryption function was executed')
+                        // console.log(decryptedText)
+                        // const depryptedMessage = {
+                        //     text: decryptedText,
+                        //     sender: sender
+                        // }
+                        // return depryptedMessage
                     })
                 )
                 console.log("Messages from history")
@@ -213,6 +251,8 @@ export default function ContactList() {
         } catch (error) {
             console.error('Error fetching public key:', error)
         }
+
+        // setUsers([])
     }
     // ...rest of your component logic...
 
