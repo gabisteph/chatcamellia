@@ -16,11 +16,6 @@ export default function ContactList() {
     const [newUsername, setNewUsername] = useState('')
     const [users, setUsers] = useState([])
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
-    // const [userSessions, setUserSessions] = useState({}) // State to manage user sessions
-
-    // const [currentSession, setCurrentSession] = useState(null)
-    // const [currentUserPublicKey, setCurrentUserPublic] = useState(null)
-    // const [messages, setMessages] = useState([])
     const [currentChatUser, setCurrentChatUser] = useState(null)
     const {CurrentUser, setCurrentUser}= useCurrentUser()
 
@@ -202,17 +197,7 @@ export default function ContactList() {
                             return depryptedMessage
                         }
                     
-                        // const decryptedText = await decryptMessages(
-                        //     text,
-                        //     key
-                        // )
-                        // console.log('decryption function was executed')
-                        // console.log(decryptedText)
-                        // const depryptedMessage = {
-                        //     text: decryptedText,
-                        //     sender: sender
-                        // }
-                        // return depryptedMessage
+                     
                     })
                 )
                 console.log("Messages from history")

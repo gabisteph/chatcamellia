@@ -230,7 +230,6 @@ const Chat = () => {
       console.log('Received sid: ' + receivedSid);
       sessionStorage.setItem('Sid', receivedSid);
       setSid(receivedSid);
-      // UserPublicKey()
       await publishPublicKey()
     });
     return () => {
@@ -247,8 +246,6 @@ const Chat = () => {
       
 
 }, []);
-
-
 
   function generateSymmetricKey() {
     return window.crypto.getRandomValues(new Uint8Array(32));
