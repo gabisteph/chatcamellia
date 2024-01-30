@@ -9,21 +9,42 @@ import { useCurrentUser } from './hook/usersContactList.js'
 import { useChat } from './hook/useChat.js'
 import { useSession } from './hook/useSession.js'
 import ContactsIcon from '@mui/icons-material/Contacts'
-
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, Checkbox, FormControlLabel } from '@mui/material';
 import { useUserChat } from './contexts/useUserChat.js'
+import TextField from '@mui/material/TextField';
+
 
 const SERVER_URL = 'http://localhost:8000'
 export default function ContactList() {
     const [localChats, setLocalChats] = useState([])
     const [newUsername, setNewUsername] = useState('')
-    const [users, setUsers] = useState([])
+    // const [users, setUsers] = useState([])
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
     const [currentChatUser, setCurrentChatUser] = useState(null)
-    const { CurrentUser, setCurrentUser } = useCurrentUser()
+    const [groupName, setGroupName] = useState(''); // Add this state for holding the group name
+
+    // const { CurrentUser, setCurrentUser } = useCurrentUser()
+
+
+    const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+    const [selectedUsers, setSelectedUsers] = useState({});
+    const [myIdUser, setMyIdUser] = useState('')
+
+
+
+    const handleCreateGroup = () => {
+        setIsGroupDialogOpen(true); // Open the group creation dialog
+    };
+
+    const handleGroupDialogClose = () => {
+        setIsGroupDialogOpen(false); // Close the group creation dialog
+    };
 
     const socketRef = useRef()
     const { CurrentUserPUblicKey, setCurrentUserPublicKey } = useUser()
     // const {currentSession, setCurrentSession} = useSession()
+    const { CurrentUser, setCurrentUser, users, setUsers, groups, setGroups } = useCurrentUser()
+
     const { currentSession, setCurrentSession, userSessions, setUserSessions } =
         useSession()
 
@@ -120,14 +141,83 @@ export default function ContactList() {
             return plainTextBuffer
         } catch (error) {
             console.error('Error decrypting the key:', error)
-            // return "Error: " + error
-            // Handle error or return a fallback
+            
         }
-        // Assuming 'text' is the encrypted message
-        // const textBuffer = base64ToArrayBuffer(text)
+       
     }
 
-    const handleUserClick = async (user) => {
+    
+
+    const handleCloseGroupDialog = () => {
+        setIsGroupDialogOpen(false);
+    };
+
+    const handleToggleUserSelection = (userId) => {
+        setSelectedUsers(prev => ({
+            ...prev,
+            [userId]: !prev[userId]
+        }));
+
+    };
+
+    const handleGroupCreationConfirm = async () => {
+        // Logic to create group with selected user IDs
+        if (!groupName.trim()) {
+            alert("Please enter a group name.");
+            return;
+        }
+        const selectedUserIds = Object.keys(selectedUsers).filter(userId => selectedUsers[userId]);
+        console.log('Creating group with users:', selectedUserIds);
+        // const groupName = "New Group";
+        const sessionId = generateSessionId();
+        const groupData = {
+            group_name: groupName,
+            members: selectedUserIds,
+            session_id: sessionId
+            // ... any other group info ...
+        };
+        
+        // Define the URL of your FastAPI endpoint for group creation
+        const url = 'http://localhost:8000/groups'; // Update with your actual endpoint
+    
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include other headers like authorization if needed
+                },
+                body: JSON.stringify(groupData),
+            });
+    
+            if (response.ok) {
+                const data = await response.json();
+                setGroups(prevGroups => [...prevGroups, data]);
+                // setGroups(prevGroups => [...(prevGroups || []), data]);
+
+                
+                console.log('Group created:', data);
+                console.log("Available groups:", groups)
+                // Perform actions based on response, if necessary
+            } else {
+                // Handle errors if the response is not ok (e.g., status code is not 2xx)
+                console.error('Failed to create group:', response.status);
+            }
+        } catch (error) {
+            // Handle network errors or other unexpected errors
+            console.error('Error creating group:', error);
+        }
+        // TODO: Add your logic to create a group, such as an API call
+
+        setIsGroupDialogOpen(false);
+        setSelectedUsers({});
+
+    };
+    const handleUserClick = async (item) => {
+        console.log('handleUserClick');
+        console.log(item)
+        if (item.type === 'user'){
+        const user = item
         setCurrentUser(user.id_)
         console.log('User clicked')
         console.log(doesSessionExist(user.id_))
@@ -135,10 +225,7 @@ export default function ContactList() {
             console.error('Session does not exist')
             const sessionId = generateSessionId() // Your session ID generation logic
             userSessions[user.id_] = sessionId
-            // setUserSessions((prevSessions) => ({
-            //     ...prevSessions,
-            //     [user.id_]: sessionId,
-            // }))
+            
             setCurrentSession(sessionId)
             console.log('Session')
             console.log(sessionId)
@@ -171,7 +258,7 @@ export default function ContactList() {
                             console.log('Chave simétrica criptografada')
                             console.log(message.key)
                             const { text, key, sender } = message
-                            if (sender == user.id_) {
+                            if (sender === user.id_) {
                                 const decryptedText = await decryptMessages(
                                     text,
                                     key
@@ -184,8 +271,7 @@ export default function ContactList() {
                                 }
                                 return depryptedMessage
                             } else {
-                                const { text, key, sender, sender_key } =
-                                    message
+                                const { text, key, sender, sender_key } = message
                                 const decryptedText = await decryptMessages(
                                     text,
                                     sender_key
@@ -226,21 +312,92 @@ export default function ContactList() {
                 setCurrentUser(data.id_)
                 setCurrentUserPublicKey(publicKey)
                 console.log('Public key changed')
-
+       
                 console.log('Public Key for', user, ':', user.public_key)
-                changeUsername(user.username)
             } else {
                 console.error('Failed to fetch public key:', response.status)
             }
         } catch (error) {
             console.error('Error fetching public key:', error)
         }
-
-        // setUsers([])
     }
-    // ...rest of your component logic...
+    else{
 
+        if (item.type === 'group') {
+            setCurrentUser(item.id_)
+            console.log('Group:', currentSession)
+            console.log(doesSessionExist(currentSession))
+            const response = await fetch(
+                `http://localhost:8000/history/${currentSession}`
+            )
+            if (response.ok) {
+                const data = await response.json()
+
+               
+            if (data.length > 0) {
+                const decryptedMessages = await Promise.all(
+                    data.map(async (message) => {
+                        
+                        const {group_id, text, receivedkeys, session_id, sender} = message
+                        const myEncryptedKey = receivedkeys[myIdUser]
+                        setUserSessions((prevSessions) => ({
+                            ...prevSessions,
+                            [group_id]: session_id,
+                        }))
+                        userSessions[group_id] = session_id
+                        setCurrentUser(group_id)
+                        console.log('Recebendo menssage')
+                        console.log('Chave simetrica recebida')
+                        // const plainText = await decryptMessages(text, myEncryptedKey)
+
+                        if (sender === myIdUser) {
+                            const decryptedText = await decryptMessages(
+                                text,
+                                myEncryptedKey
+                            )
+                            console.log('decryption function was executed')
+                            console.log(decryptedText)
+                            const depryptedMessage = {
+                                text: decryptedText,
+                                sender: sender,
+                            }
+                            return depryptedMessage
+                        } else {
+                            console.log('decrypting message history from group')
+                            console.log(message)
+                            const {group_id, text, receivedkeys, session_id, sender} = message
+                            const encryptedKey = receivedkeys[sender]
+                            const decryptedText = await decryptMessages(
+                                text,
+                                encryptedKey
+                            )
+                            console.log('decryption function was executed')
+                            console.log(decryptedText)
+                            const depryptedMessage = {
+                                text: decryptedText,
+                                sender: sender,
+                            }
+                            return depryptedMessage
+                        }
+                    })
+                )
+                setMessages(decryptedMessages)
+
+                // setMessages(decryptedMessages)
+            } else {
+                setMessages([])
+            }
+            // You can now use this publicKey for further operations
+        } else {
+            console.error('History:', response.status)
+        }
+    } 
+
+    
+}
+    }
     return (
+        
         <Box height="100%" width="30%" overflow="hidden">
             <Box
                 bgcolor="#9c6fe487"
@@ -253,7 +410,7 @@ export default function ContactList() {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        height: '60px',
+                        height: '50px',
                         gap: '8px',
                         borderBottom: '1px solid #fff'
                     }}
@@ -278,7 +435,7 @@ export default function ContactList() {
                             style={{
                                 padding: '10px',
                                 backgroundColor:
-                                    selectedUserId === user.id
+                                    selectedUserId === user.id_
                                         ? '#FFF'
                                         : 'transparent',
                                 color: 'grey',
@@ -301,7 +458,44 @@ export default function ContactList() {
                         </li>
                     ))}
                 </ul>
+                <Button variant="contained" onClick={handleCreateGroup}>Create Group</Button>
+            
+            <Dialog open={isGroupDialogOpen} onClose={handleCloseGroupDialog}>
+                <DialogTitle>Create New Group</DialogTitle>
+                <DialogContent>
+                <TextField
+                autoFocus
+                margin="dense"
+                id="group-name"
+                label="Group Name"
+                type="text"
+                fullWidth
+                variant="standard"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)} // Update the state when the input changes
+            />
+                    <List>
+                        {users.map(user => (
+                            <ListItem key={user.id_} button onClick={() => handleToggleUserSelection(user.id_)}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={!!selectedUsers[user.id_]}
+                                            onChange={() => handleToggleUserSelection(user.id_)}
+                                        />
+                                    }
+                                    label={user.username}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseGroupDialog}>Cancel</Button>
+                    <Button onClick={handleGroupCreationConfirm}>Create</Button>
+                </DialogActions>
+            </Dialog>
             </Box>
-        </Box>
+        </Box>    
     )
 }
