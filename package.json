@@ -2,7 +2,7 @@
   "name": "chatcamellia",
   "version": "0.1.0",
   "private": true,
-  "proxy":"https://tranquil-escarpment-24882-caea67df61ed.herokuapp.com/",
+  "proxy": "https://tranquil-escarpment-24882-caea67df61ed.herokuapp.com/",
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
@@ -21,13 +21,14 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
     "react-scripts": "5.0.1",
+    "serve": "^14.2.1",
     "socket.io-client": "^4.7.4",
     "styled-components": "^6.1.6",
     "web-vitals": "^2.1.4",
     "yup": "^1.3.3"
   },
   "scripts": {
-    "start": "HTTPS=true react-scripts start",
+    "start": "serve -s build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
