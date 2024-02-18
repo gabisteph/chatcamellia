@@ -14,21 +14,22 @@ import { useUserChat } from './contexts/useUserChat.js'
 import TextField from '@mui/material/TextField';
 
 
-const SERVER_URL = 'http://localhost:8000'
+const SERVER_URL = process.env.BASE_URL
 export default function ContactList() {
+    const baseUrl = process.env.BASE_URL;
     const [localChats, setLocalChats] = useState([])
     const [newUsername, setNewUsername] = useState('')
     // const [users, setUsers] = useState([])
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
     const [currentChatUser, setCurrentChatUser] = useState(null)
     const [groupName, setGroupName] = useState(''); // Add this state for holding the group name
-
+    
     // const { CurrentUser, setCurrentUser } = useCurrentUser()
 
 
     const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState({});
-    const [myIdUser, setMyIdUser] = useState('')
+    // const [myIdUser, setMyIdUser] = useState('')
 
 
 
@@ -41,7 +42,9 @@ export default function ContactList() {
     };
 
     const socketRef = useRef()
-    const { CurrentUserPUblicKey, setCurrentUserPublicKey } = useUser()
+    // const { CurrentUserPUblicKey, setCurrentUserPublicKey } = useUser()
+    const { CurrentUserPUblicKey, setCurrentUserPublicKey, myIdUser, setMyIdUser } = useUser()
+
     // const {currentSession, setCurrentSession} = useSession()
     const { CurrentUser, setCurrentUser, users, setUsers, groups, setGroups } = useCurrentUser()
 
@@ -70,6 +73,28 @@ export default function ContactList() {
                 (user) => user.username !== storedUsername
             )
             setUsers(otherUsers)
+            console.log('User id', myIdUser)
+            const user_id = sessionStorage.getItem('userId')
+            const groupsResponse = await fetch(
+                `${baseUrl}/get-groups/${user_id}`
+                
+            )
+            console.log(groupsResponse)
+            if (groupsResponse.ok) {
+
+                const groupsData = await groupsResponse.json();
+            // Assuming groupsData is an array of group objects
+                console.log('GROUPS', groupsData);
+
+                // Combine users and groups data (adjust according to your needs and data structure)
+                const combinedData = [...otherUsers, ...groupsData];
+
+                // Update your state with the combined data
+                setUsers(combinedData);
+                setGroups(groupsData);
+                
+            }
+
         })
 
         return () => {
@@ -87,11 +112,11 @@ export default function ContactList() {
     }
     function base64ToArrayBuffer(base64) {
         try {
-            console.log('raw base64')
-            console.log(base64)
+            // console.log('raw base64')
+            // console.log(base64)
             const cleanedBase64 = base64.trim().replace(/\s/g, '')
-            console.log('Cleaned base64')
-            console.log(cleanedBase64)
+            // console.log('Cleaned base64')
+            // console.log(cleanedBase64)
             const binaryString = window.atob(cleanedBase64)
             if (binaryString != null) {
                 const len = binaryString.length
@@ -101,7 +126,6 @@ export default function ContactList() {
                 }
                 return bytes.buffer
 
-                // ... rest of your code ...
             } else {
                 console.error('binaryString is undefined')
                 console.log(binaryString)
@@ -113,7 +137,9 @@ export default function ContactList() {
     }
     async function decryptMessages(text, key) {
         const keyBuffer = base64ToArrayBuffer(key)
-        const privateKey = sessionStorage.getItem('privateKey')
+        // localStorage.setItem("myPrivateKey", JSON.stringify(ExportedPrivateKey));
+
+        const privateKey = localStorage.getItem('myPrivateKey')
         const privateKeyObject = JSON.parse(privateKey)
         console.log('Chave privada', privateKeyObject)
         // Import the key back into a CryptoKey
@@ -136,8 +162,8 @@ export default function ContactList() {
                 'cbc',
                 '\x05'
             )
-            console.log('Camellia been executed successfully')
-            console.log('Decrypted Message:', plainTextBuffer)
+            console.log('Camellia foi executado')
+            console.log('Messagem descriptografada:', plainTextBuffer)
             return plainTextBuffer
         } catch (error) {
             console.error('Error decrypting the key:', error)
@@ -145,8 +171,6 @@ export default function ContactList() {
         }
        
     }
-
-    
 
     const handleCloseGroupDialog = () => {
         setIsGroupDialogOpen(false);
@@ -167,7 +191,8 @@ export default function ContactList() {
             return;
         }
         const selectedUserIds = Object.keys(selectedUsers).filter(userId => selectedUsers[userId]);
-        console.log('Creating group with users:', selectedUserIds);
+        console.log('Criando grupo com os seguintes usuários:', selectedUserIds);
+        selectedUserIds.push(myIdUser)
         // const groupName = "New Group";
         const sessionId = generateSessionId();
         const groupData = {
@@ -178,7 +203,7 @@ export default function ContactList() {
         };
         
         // Define the URL of your FastAPI endpoint for group creation
-        const url = 'http://localhost:8000/groups'; // Update with your actual endpoint
+        const url = '${baseUrl}/groups'; // Update with your actual endpoint
     
         try {
             const response = await fetch(url, {
@@ -194,10 +219,8 @@ export default function ContactList() {
                 const data = await response.json();
                 setGroups(prevGroups => [...prevGroups, data]);
                 // setGroups(prevGroups => [...(prevGroups || []), data]);
-
-                
-                console.log('Group created:', data);
-                console.log("Available groups:", groups)
+                console.log('Groupo criado:', data);
+                console.log("grupos disponível:", groups)
                 // Perform actions based on response, if necessary
             } else {
                 // Handle errors if the response is not ok (e.g., status code is not 2xx)
@@ -219,13 +242,11 @@ export default function ContactList() {
         if (item.type === 'user'){
         const user = item
         setCurrentUser(user.id_)
-        console.log('User clicked')
         console.log(doesSessionExist(user.id_))
         if (!doesSessionExist(user.id_)) {
-            console.error('Session does not exist')
             const sessionId = generateSessionId() // Your session ID generation logic
             userSessions[user.id_] = sessionId
-            
+            console.log('Criando uma sessão')
             setCurrentSession(sessionId)
             console.log('Session')
             console.log(sessionId)
@@ -245,7 +266,7 @@ export default function ContactList() {
             console.log('Session id')
             console.log(currentSession)
             const response = await fetch(
-                `http://localhost:8000/history/${sessionId}`
+                `${baseUrl}/history/${sessionId}`
             )
             if (response.ok) {
                 const data = await response.json()
@@ -257,11 +278,11 @@ export default function ContactList() {
                             console.log(message.text)
                             console.log('Chave simétrica criptografada')
                             console.log(message.key)
-                            const { text, key, sender } = message
+                            const { text, key, sender, sender_key } = message
                             if (sender === user.id_) {
                                 const decryptedText = await decryptMessages(
                                     text,
-                                    key
+                                    sender_key
                                 )
                                 console.log('decryption function was executed')
                                 console.log(decryptedText)
@@ -270,7 +291,8 @@ export default function ContactList() {
                                     sender: sender,
                                 }
                                 return depryptedMessage
-                            } else {
+                            } 
+                            else {
                                 const { text, key, sender, sender_key } = message
                                 const decryptedText = await decryptMessages(
                                     text,
@@ -304,7 +326,7 @@ export default function ContactList() {
 
         try {
             const response = await fetch(
-                `http://localhost:8000/public-key/${user.id_}`
+                `${baseUrl}/public-key/${user.id_}`
             )
             if (response.ok) {
                 const data = await response.json()
@@ -322,79 +344,83 @@ export default function ContactList() {
         }
     }
     else{
-
         if (item.type === 'group') {
+            console.log("Iniciando conversa em grupo")
             setCurrentUser(item.id_)
-            console.log('Group:', currentSession)
-            console.log(doesSessionExist(currentSession))
-            const response = await fetch(
-                `http://localhost:8000/history/${currentSession}`
-            )
-            if (response.ok) {
-                const data = await response.json()
 
-               
-            if (data.length > 0) {
-                const decryptedMessages = await Promise.all(
-                    data.map(async (message) => {
-                        
-                        const {group_id, text, receivedkeys, session_id, sender} = message
-                        const myEncryptedKey = receivedkeys[myIdUser]
-                        setUserSessions((prevSessions) => ({
-                            ...prevSessions,
-                            [group_id]: session_id,
-                        }))
-                        userSessions[group_id] = session_id
-                        setCurrentUser(group_id)
-                        console.log('Recebendo menssage')
-                        console.log('Chave simetrica recebida')
-                        // const plainText = await decryptMessages(text, myEncryptedKey)
-
-                        if (sender === myIdUser) {
-                            const decryptedText = await decryptMessages(
-                                text,
-                                myEncryptedKey
-                            )
-                            console.log('decryption function was executed')
-                            console.log(decryptedText)
-                            const depryptedMessage = {
-                                text: decryptedText,
-                                sender: sender,
-                            }
-                            return depryptedMessage
-                        } else {
-                            console.log('decrypting message history from group')
-                            console.log(message)
-                            const {group_id, text, receivedkeys, session_id, sender} = message
-                            const encryptedKey = receivedkeys[sender]
-                            const decryptedText = await decryptMessages(
-                                text,
-                                encryptedKey
-                            )
-                            console.log('decryption function was executed')
-                            console.log(decryptedText)
-                            const depryptedMessage = {
-                                text: decryptedText,
-                                sender: sender,
-                            }
-                            return depryptedMessage
-                        }
-                    })
-                )
-                setMessages(decryptedMessages)
-
-                // setMessages(decryptedMessages)
+            if (!doesSessionExist(item.id_)) {
+                console.log('Session does not exist')
+                const sessionId = generateSessionId() // Your session ID generation logic
+                userSessions[item.id_] = sessionId
+                setCurrentSession(sessionId)
+                console.log('Session')
+                console.log(sessionId)
             } else {
-                setMessages([])
+                const sessionId = getSessionIdById(item.id_)
+                setCurrentSession(sessionId)
             }
-            // You can now use this publicKey for further operations
-        } else {
-            console.error('History:', response.status)
-        }
-    } 
+            setCurrentUser(item.id_)
+            console.log('Groupo:', item.id_)
+            try {
+                const getSessionIdById = (userId) => {
+                    return userSessions[userId]
+                }
+                const sessionId = getSessionIdById(item.id_)
+                const response = await fetch(
+                    `${baseUrl}/history/${sessionId}`
+                )
+                if (response.ok) {
+                    const data = await response.json()
+                
+                    if (data.length > 0) {
+                        const decryptedMessages = await Promise.all(
+                            data.map(async (message) => {
+                                
+                                const {group_id, text, keys, session_id, sender} = message
+                                const myEncryptedKey = keys[myIdUser]
+                                setUserSessions((prevSessions) => ({
+                                    ...prevSessions,
+                                    [group_id]: session_id,
+                                }))
+                                userSessions[group_id] = session_id
+                                setCurrentUser(group_id)
+                                console.log('Recebendo mensagem')
+                                console.log('Chave simetrica criptografada recebida')
+                                console.log(myEncryptedKey)
+                                console.log("Texto criptografado")
+                                console.log(text)
+                                const decryptedText = await decryptMessages(
+                                    text,
+                                    myEncryptedKey
+                                )
+                                console.log('Função de descriptografia foi executada')
+                                console.log(decryptedText)
+                                const depryptedMessage = {
+                                    text: decryptedText,
+                                    sender: sender,
+                                }
+                                return depryptedMessage
+        
+                            })
+                    )
+                    setMessages(decryptedMessages)
+                    }
+                    else{
+                        setMessages([])
+                    }
+                }
+                else{
+                    console.error('History:', response.status)
+                }
+                // setMessages(decryptedMessages)
+            }
+            catch (error) {
+                console.error('Error fetching history:', error)
+            }
 
-    
-}
+            // You can now use this publicKey for further operations
+        } 
+    } 
     }
     return (
         

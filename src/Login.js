@@ -19,14 +19,19 @@ const Login = () => {
 
   const handleLogin = async (values, { setSubmitting }) => {
     try {
-      const apiUrl = 'http://25.6.211.198:8000/login';
+      const apiUrl = 'http://localhost:8000/login';
+      console.log(values)
+      const credentials = new URLSearchParams();
+      credentials.append('username', values.username);
+      credentials.append('password', values.password);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(values),
+        // body: JSON.stringify(values),
+        body: credentials
       });
 
       if (!response.ok) {

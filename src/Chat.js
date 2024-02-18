@@ -15,8 +15,8 @@ const Chat = () => {
     // Pega daqui
     // const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('')
-
-    const SERVER_URL = 'http://localhost:8000'
+    const baseUrl = process.env.BASE_URL;
+    const SERVER_URL = baseUrl
     const socketRef = useRef(null)
     const [username, setUsername] = useState('')
     // const [users, setUsers] = useState([]) /// Lista de usuários que vai sendo atualizada para exibir na tela
@@ -26,7 +26,7 @@ const Chat = () => {
     const [sid, setSid] = useState('')
     // const [userSessions, setUserSessions] = useState({});
     // const [currentSession, setCurrentSession] = useState('')
-    const [myIdUser, setMyIdUser] = useState('')
+    // const [myIdUser, setMyIdUser] = useState('')
     const [CurrentSymmetricKey, setSymmetricKey] = useState('')
     const [MyUserPublicKey, setUserPublicKey] = useState('')
     const [CurrentUserPublic, setCurrentUserPublic] = useState('')
@@ -35,14 +35,20 @@ const Chat = () => {
     // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 
     const { messages, setMessages } = useChat()
-    const { CurrentUserPUblicKey, setCurrentUserPublicKey } = useUser()
+    const { CurrentUserPUblicKey, setCurrentUserPublicKey, myIdUser, setMyIdUser } = useUser()
     const { CurrentUser, setCurrentUser, users, setUsers, groups, setGroups } = useCurrentUser()
-    const {currentGroup, setCurrentGroup} = useState('')
+    const [currentGroup, setCurrentGroup] = useState('')
     const { currentSession, setCurrentSession, userSessions, setUserSessions } =
         useSession()
-
+    
+    
     useEffect(() => {
+        const MyPublicKey = localStorage.getItem("myPublicKey");
+        console.log(MyPublicKey)
         
+        console.log('My public key')
+        console.log(MyUserPublicKey)
+
         socketRef.current = io(SERVER_URL, {
             transports: ['websocket'],
             rejectUnauthorized: false,
@@ -52,7 +58,8 @@ const Chat = () => {
         async function decryptMessages(text, key) {
             const keyBuffer = base64ToArrayBuffer(key)
             console.log('decrypted key buffer', keyBuffer)
-            const privateKey = sessionStorage.getItem('privateKey')
+         
+            const privateKey = localStorage.getItem('myPrivateKey')
             console.log('private key', privateKey)
             const privateKeyObject = JSON.parse(privateKey)
             console.log('private key object', privateKeyObject)
@@ -63,18 +70,18 @@ const Chat = () => {
                 'jwk',
                 privateKeyObject,
                 { name: 'RSA-OAEP', hash: { name: 'SHA-256' } },
-                false,
+                true,
                 ['decrypt']
             )
             console.log('import key object', importedPrivateKey)
+            
             const decryptedKey = await RSAHandler.rsaDecrypt(
                 importedPrivateKey,
                 keyBuffer
-            )
+            )    
             console.log('Chave simetrica descriptografada')
             console.log(decryptedKey)
-            // Assuming 'text' is the encrypted message
-            // const textBuffer = base64ToArrayBuffer(text);
+            
             const plainTextBuffer = camellia.decrypt(
                 text,
                 decryptedKey,
@@ -86,66 +93,6 @@ const Chat = () => {
             return plainTextBuffer
         }
 
-        // Essa função é a de cadastro
-        // Eu preciso do username
-        // Preciso que as chaves rsa sejam geradas no login ou no cadastro
-        function exportKey(key) {
-            return window.crypto.subtle.exportKey('jwk', key)
-        }
-        const publishPublicKey = async () => {
-            const storedUsername = sessionStorage.getItem('username')
-            setUsername(storedUsername)
-            console.log('Username:', storedUsername)
-            const NewSid = sessionStorage.getItem('Sid')
-            setSid(NewSid)
-
-            if (storedUsername && NewSid !== '');
-            {
-                setUsername(storedUsername)
-
-                try {
-                    // Essas chaves precisam ser geradas todas as vezes que o usuário entrar no chat
-                    const keyPair = await RSAHandler.generateRsaKeys()
-                    console.log('Gerando as chaves')
-                    setPrivateKey(keyPair.privateKey)
-                    setPublicKey(keyPair.publicKey)
-                    console.log('Chave pública ->>>', keyPair.publicKey)
-                    console.log('Chave privada ->>>', keyPair.privateKey)
-                    // Export the key to a storable format (e.g., JWK)
-                    const exportedKeyPrivatekey = await exportKey(
-                        keyPair.privateKey
-                    )
-
-                    // Store the exported key as a string
-                    sessionStorage.setItem(
-                        'privateKey',
-                        JSON.stringify(exportedKeyPrivatekey)
-                    )
-                    const user_id = sessionStorage.getItem('userId')
-                    console.log('userId: ', user_id)
-                    console.log(user_id)
-                    const ExportedPublicKey = await exportKey(keyPair.publicKey)
-                    setUserPublicKey(ExportedPublicKey)
-                    // sessionStorage.setItem('', JSON.stringify(exportedKeyPrivatekey));
-                    // Preparing data to send
-                    const userRegisterData = JSON.stringify({
-                        user_id: user_id,
-                        public_key: ExportedPublicKey, // Exporting publicKey in a usable format
-                        sid: NewSid,
-                    })
-                    console.log(userRegisterData);
-                    const response = await fetch(`http://localhost:8000/update-public-key/${user_id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: userRegisterData
-                    });
-                } catch (error) {
-                    console.error('error in publish public key:', error)
-                }
-            }
-        }
         function base64ToArrayBuffer(base64) {
             try {
                 // base64 = base64.replace(/\s/g, ''); // Clean the base64 string
@@ -182,22 +129,21 @@ const Chat = () => {
                         ...prevSessions,
                         [sender]: session_id,
                     }))
-
+                    
                     userSessions[sender] = session_id
-                    console.log('Recebendo menssage')
                     setCurrentSession(session_id)
                     console.log('Chave simetrica recebida')
                     console.log(key)
                     setCurrentUser(sender)
                     const plainText = await decryptMessages(text, key)
                     const response = await fetch(
-                        `http://localhost:8000/public-key/${sender}`
+                        `${baseUrl}/public-key/${sender}`
                     )
+
                     if (response.ok) {
                         const data = await response.json()
                         const publicKey = data.public_key
                         setCurrentUser(data.id_)
-                        setCurrentUserPublicKey(publicKey)
                         setCurrentUserPublicKey(publicKey)
 
                     } else {
@@ -220,11 +166,15 @@ const Chat = () => {
         })
 
         socketRef.current.on('groupMessage', async (incomingMessages) => {
+            console.log(incomingMessages)
             const decryptedMessages = await Promise.all(
                 incomingMessages.map(async (message) => {
                     // const { text, key, sender, session_id } = message
-                    const {group_id, text, receivedkeys, session_id} = message
-                    const myEncryptedKey = receivedkeys[myIdUser]
+                    const {group_id, text, keys, session_id} = message
+                    const user_id = sessionStorage.getItem('userId')
+                    console.log('my id', user_id)
+                    const myEncryptedKey = keys[user_id]
+                    console.log('My encrypted key: ' + myEncryptedKey)
                     setUserSessions((prevSessions) => ({
                         ...prevSessions,
                         [group_id]: session_id,
@@ -233,20 +183,22 @@ const Chat = () => {
                     setCurrentUser(group_id)
                     console.log('Recebendo menssage')
                     // setCurrentSession(session_id)
+                    console.log(group_id)
                     console.log('Chave simetrica recebida')
-                    // console.log(key)
-                    // setCurrentGroup(sender)
                     const plainText = await decryptMessages(text, myEncryptedKey)
                     const response = await fetch(
-                        `http://localhost:8000/group-public-keys/${group_id}`
+                        `${baseUrl}/group-public-keys/${group_id}`
                         
                     )
+                    setCurrentUser(group_id)
                     if (response.ok) {
                         const data = await response.json()
                         const publicKey = data.keys
                         setCurrentGroupPublicKeys(data)
+                        console.log("current group public")
+                        console.log(data)
                         setCurrentGroup(data.group_id)
-                        setCurrentUserPublicKey(publicKey)
+                        // setCurrentUserPublicKey(publicKey)
                     } else {
                         console.error(
                             'Failed to fetch public key:',
@@ -281,15 +233,28 @@ const Chat = () => {
             )
             // Update the state with the list of other users
             setUsers(otherUsers)
-            // socketRef.current.off('userList');
+
         })
 
         // Evento para receber o Sid
         socketRef.current.on('getSid', async (receivedSid) => {
             console.log('Received sid: ' + receivedSid)
+            const user_id = sessionStorage.getItem('userId')
             sessionStorage.setItem('Sid', receivedSid)
-            setSid(receivedSid)
-            await publishPublicKey()
+            
+            const data = {sid: receivedSid, 
+                        user_id: user_id}
+            console.log(data)
+            const response = await fetch(
+                `${baseUrl}/sid/${user_id}`,{
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+            // if response.ok
         })
         return () => {
             if (socketRef.current) {
@@ -341,15 +306,34 @@ const Chat = () => {
         if (newMessage.trim() === '') {
             return
         }
-        const isGroup = groups.some(group => group.id === item);
+        
+        const isGroup = groups.some(group => group.id_ === item);
+        console.log(groups)
         if (isGroup){
-        // if (item === currentGroup){
-            // if (newMessage.trim() === '') {
-            //     return
-            // }
+            console.log('IS GROUP', item)
             console.log('Sending message to a group')
+            // const keys = currentGroupPublicKeys
+            const response = await fetch(
+                `${baseUrl}/group-public-keys/${item}`
+                
+            )
+            if (response.ok) {
+                const data = await response.json()
+                const publicKey = data.keys
+                setCurrentGroupPublicKeys(data)
+                console.log("current group public")
+                console.log(data)
+                setCurrentGroup(data.group_id)
+                setCurrentUserPublicKey(publicKey)
+            } else {
+                console.error(
+                    'Failed to fetch public key:',
+                    response.status
+                )
+            }
             const keys = currentGroupPublicKeys
-    
+
+            console.log('keys', keys)
             function bufferToBase64(buffer) {
                 const binary = String.fromCharCode.apply(
                     null,
@@ -359,7 +343,7 @@ const Chat = () => {
             }
     
             const SymmetricKey = generateSymmetricKey()
-            console.log('Chave simetrica:')
+            console.log('Gerando chave simétrica:')
             console.log(SymmetricKey)
             const symmetricKeyBuffer = SymmetricKey.buffer
             setSymmetricKey(symmetricKeyBuffer)
@@ -375,18 +359,22 @@ const Chat = () => {
             }
             console.log('Current User Public')
             console.log(CurrentUserPUblicKey)
-
-
             const encryptedKeysForGroup = {};
 
     // Encrypt the symmetric key for each group member
-            for (const [memberId, publicKey] of Object.entries(keys)) {
+            const publicKeys = keys.keys
+            for (const [memberId, publicKey] of Object.entries(publicKeys)) {
+                console.log('Criptografando chave simétrica para o usuário')
+                console.log("usuário:", memberId)
                 const importedKey = await importRsaKey(publicKey, 'public');
                 const encryptedSymmetricKey = await RSAHandler.rsaEncrypt(importedKey, symmetricKeyBuffer);
+                console.log(encryptedSymmetricKey)
                 encryptedKeysForGroup[memberId] = bufferToBase64(encryptedSymmetricKey);
             }
 
             // Criando cópia da chave simetrica criptografada para descriptografar no historico mais tarde
+            console.log('Minha chave publica: ')
+            console.log(MyUserPublicKey)
             const senderImportedKey = await importRsaKey(MyUserPublicKey, 'public')
             const encryptedSymmetricKeyForSender = await RSAHandler.rsaEncrypt(
                 senderImportedKey,
@@ -423,11 +411,6 @@ const Chat = () => {
         }
         else{
 
-
-        // if (newMessage.trim() === '') {
-        //     return
-        // }
-
         function bufferToBase64(buffer) {
             const binary = String.fromCharCode.apply(
                 null,
@@ -435,9 +418,9 @@ const Chat = () => {
             )
             return window.btoa(binary)
         }
-
+        
         const SymmetricKey = generateSymmetricKey()
-        console.log('Chave simetrica:')
+        console.log('Gerando chave simétrica:')
         console.log(SymmetricKey)
         const symmetricKeyBuffer = SymmetricKey.buffer
         setSymmetricKey(symmetricKeyBuffer)
@@ -451,7 +434,7 @@ const Chat = () => {
             iv: Iv,
             pchar: '\x05',
         }
-        console.log('Current User Public')
+        console.log('Chave pública do usuário')
         console.log(CurrentUserPUblicKey)
         const ImportedKey = await importRsaKey(CurrentUserPUblicKey, 'public')
         const encrypted_public_key = await RSAHandler.rsaEncrypt(
@@ -461,9 +444,17 @@ const Chat = () => {
         const encryptedPublicKeyBase64 = bufferToBase64(encrypted_public_key)
         console.log('chave simetrica enviada')
         console.log(encryptedPublicKeyBase64)
+        console.log('testando')
+        const MyPublicKey = localStorage.getItem("myPublicKey");
+        console.log(MyPublicKey)
+        const MyPublicKeyArray = JSON.parse(MyPublicKey);
+        console.log('My keyyy')
+        console.log(MyPublicKeyArray)
 
-        // Criando cópia da chave simetrica criptografada para descriptografar no historico mais tarde
-        const senderImportedKey = await importRsaKey(MyUserPublicKey, 'public')
+        const senderImportedKey = await importRsaKey(MyPublicKeyArray, 'public')
+        console.log('sender imported key')
+        console.log(senderImportedKey)
+        // const senderImportedKey = MyPublicKey
         const encryptedSymmetricKeyForSender = await RSAHandler.rsaEncrypt(
             senderImportedKey,
             symmetricKeyBuffer
@@ -471,7 +462,8 @@ const Chat = () => {
         const encryptedSymmetricKeyForSenderBase64 = bufferToBase64(
             encryptedSymmetricKeyForSender
         )
-
+        console.log('Mandando mensagem para o usuário:', CurrentUser)
+        // console.log(CurrentUser)
         const encryptedMessage = camellia.encrypt(myHash)
         const messageData = {
             text: encryptedMessage,

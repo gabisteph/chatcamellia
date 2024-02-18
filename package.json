@@ -2,6 +2,7 @@
   "name": "chatcamellia",
   "version": "0.1.0",
   "private": true,
+  "proxy":"https://tranquil-escarpment-24882-caea67df61ed.herokuapp.com/",
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
@@ -11,6 +12,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.3",
+    "dotenv": "^16.4.4",
     "eslint-plugin-react": "^7.33.2",
     "firebase": "^10.7.1",
     "formik": "^2.4.5",

@@ -4,9 +4,9 @@ export const UsersListContext = createContext();
 
 export const ListProvider = ({children}) => {
     const [CurrentUserPUblicKey, setCurrentUserPublicKey] = useState('');
-    
+    const [myIdUser, setMyIdUser] = useState('')
 
-    return <UsersListContext.Provider value={{CurrentUserPUblicKey, setCurrentUserPublicKey}}>{children}</UsersListContext.Provider>
+    return <UsersListContext.Provider value={{CurrentUserPUblicKey, setCurrentUserPublicKey, myIdUser, setMyIdUser}}>{children}</UsersListContext.Provider>
 }
 
 export function useUser() {
