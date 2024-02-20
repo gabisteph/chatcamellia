@@ -16,15 +16,12 @@ const Chat = () => {
     const baseUrl = process.env.REACT_APP_BASE_URL;
     const SERVER_URL = baseUrl
     const socketRef = useRef(null)
-    const [username, setUsername] = useState('')
     // const [users, setUsers] = useState([]) /// Lista de usuários que vai sendo atualizada para exibir na tela
-    const [currentChatUser, setCurrentChatUser] = useState(null)
     const [privateKey, setPrivateKey] = useState('')
     const [publicKey, setPublicKey] = useState('')
     const [sid, setSid] = useState('')
     const [CurrentSymmetricKey, setSymmetricKey] = useState('')
     const [MyUserPublicKey, setUserPublicKey] = useState('')
-    const [CurrentUserPublic, setCurrentUserPublic] = useState('')
     const [currentGroupPublicKeys, setCurrentGroupPublicKeys] = useState([])
     // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 

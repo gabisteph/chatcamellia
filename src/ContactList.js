@@ -17,10 +17,7 @@ import TextField from '@mui/material/TextField';
 const SERVER_URL = process.env.REACT_APP_BASE_URL
 export default function ContactList() {
     const baseUrl = process.env.REACT_APP_BASE_URL;
-    const [localChats, setLocalChats] = useState([])
-    const [newUsername, setNewUsername] = useState('')
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
-    const [currentChatUser, setCurrentChatUser] = useState(null)
     const [groupName, setGroupName] = useState(''); // Add this state for holding the group name
 
     const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);

@@ -14,7 +14,6 @@ const Login = () => {
   function exportKey(key) {
     return window.crypto.subtle.exportKey('jwk', key)
 }
-  // const [users, setUsers] = useState([]) /// Lista de usuários que vai sendo atualizada para exibir na tela
   const [privateKey, setPrivateKey] = useState('')
   const [publicKey, setPublicKey] = useState('')
   const [sid, setSid] = useState('')

@@ -48,7 +48,6 @@ import { ListProvider } from './hook/useUser';
 import { CurrentUserProvider } from './hook/usersContactList';
 import { SessionProvider } from './hook/useSession';
 
-// Import the PrivateRoute component
 import PrivateRoute from './PrivateRoute'; // Adjust the import path as necessary
 
 function App() {
