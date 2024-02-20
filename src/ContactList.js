@@ -14,24 +14,17 @@ import { useUserChat } from './contexts/useUserChat.js'
 import TextField from '@mui/material/TextField';
 
 
-const SERVER_URL = process.env.BASE_URL
+const SERVER_URL = process.env.REACT_APP_BASE_URL
 export default function ContactList() {
-    const baseUrl = process.env.BASE_URL;
+    const baseUrl = process.env.REACT_APP_BASE_URL;
     const [localChats, setLocalChats] = useState([])
     const [newUsername, setNewUsername] = useState('')
-    // const [users, setUsers] = useState([])
     const [selectedUserId, setSelectedUserId] = useState(null) // State to track selected user ID
     const [currentChatUser, setCurrentChatUser] = useState(null)
     const [groupName, setGroupName] = useState(''); // Add this state for holding the group name
-    
-    // const { CurrentUser, setCurrentUser } = useCurrentUser()
-
 
     const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState({});
-    // const [myIdUser, setMyIdUser] = useState('')
-
-
 
     const handleCreateGroup = () => {
         setIsGroupDialogOpen(true); // Open the group creation dialog
@@ -67,14 +60,18 @@ export default function ContactList() {
 
         socketRef.current.on('usersList', async (usersList) => {
             console.log('USER LIST', usersList)
-            const storedUsername = sessionStorage.getItem('username')
+            // const storedUsername = sessionStorage.getItem('username')
+            const storedUsername = localStorage.getItem('username')
+
             console.log('STORED USER', storedUsername)
             const otherUsers = usersList.filter(
                 (user) => user.username !== storedUsername
             )
             setUsers(otherUsers)
             console.log('User id', myIdUser)
-            const user_id = sessionStorage.getItem('userId')
+            // const user_id = sessionStorage.getItem('userId')
+            const user_id = localStorage.getItem('userId')
+
             const groupsResponse = await fetch(
                 `${baseUrl}/get-groups/${user_id}`
                 
@@ -108,6 +105,8 @@ export default function ContactList() {
         return crypto.randomUUID()
     }
     const getSessionIdById = (userId) => {
+        console.log('User ID:', userId); // Check the user ID
+        console.log('User Sessions:', userSessions); // Inspect the entire userSessions object
         return userSessions[userId]
     }
     function base64ToArrayBuffer(base64) {
@@ -236,35 +235,54 @@ export default function ContactList() {
         setSelectedUsers({});
 
     };
+    // async function decryptMessages
+    async function createSessionID (user) {
+        if (!doesSessionExist(user.id_)) {
+            const sessionId = generateSessionId() // Your session ID generation logic
+            userSessions[user.id_] = sessionId
+            console.log('getting session for user', user)
+
+            // setUserSessions((prevSessions) => ({
+            //     ...prevSessions,
+            //     [user.id_]: sessionId,
+            // }))
+            console.log('Criando uma sessão')
+            setCurrentSession(sessionId)
+            console.log('Session')
+            console.log(sessionId)
+            return sessionId
+        } else {
+            console.log('getting session for user', user)
+            console.log(user)
+            const sessionId = getSessionIdById(user.id_)
+            console.log('Getting existing session', sessionId)
+            setCurrentSession(sessionId)
+            return sessionId
+        }
+       
+    }
+
     const handleUserClick = async (item) => {
         console.log('handleUserClick');
         console.log(item)
         if (item.type === 'user'){
         const user = item
         setCurrentUser(user.id_)
+        console.log('Session exists?')
         console.log(doesSessionExist(user.id_))
-        if (!doesSessionExist(user.id_)) {
-            const sessionId = generateSessionId() // Your session ID generation logic
-            userSessions[user.id_] = sessionId
-            console.log('Criando uma sessão')
-            setCurrentSession(sessionId)
-            console.log('Session')
-            console.log(sessionId)
-        } else {
-            const sessionId = getSessionIdById(user.id_)
-            setCurrentSession(sessionId)
-        }
         try {
-            const getSessionIdById = (userId) => {
-                return userSessions[userId]
-            }
-            console.log(user.id_)
-            console.log(userSessions)
-            const sessionId = getSessionIdById(user.id_)
+            // const getSessionIdById = (userId) => {
+            //     return userSessions[userId]
+            // }
+            const sessionId = await createSessionID(user)
+            console.log('Got session id from function: ' + sessionId)
             console.log(sessionId)
+
+            console.log('USER_ID')
+            console.log(user.id_)
+            // const sessionId = getSessionIdById(user.id_)
             setCurrentSession(sessionId)
             console.log('Session id')
-            console.log(currentSession)
             const response = await fetch(
                 `${baseUrl}/history/${sessionId}`
             )

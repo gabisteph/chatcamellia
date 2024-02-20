@@ -1,14 +1,25 @@
-import React from 'react';
 import { Formik, Field, Form, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import './Login.css';
 import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import RSAHandler from './rsaKeyGeneration.js'
+
 
 const Login = () => {
   const initialValues = {
     username: '',
     password: '',
   };
+  function exportKey(key) {
+    return window.crypto.subtle.exportKey('jwk', key)
+}
+  // const [users, setUsers] = useState([]) /// Lista de usuários que vai sendo atualizada para exibir na tela
+  const [privateKey, setPrivateKey] = useState('')
+  const [publicKey, setPublicKey] = useState('')
+  const [sid, setSid] = useState('')
+  
+  const [MyUserPublicKey, setUserPublicKey] = useState('')
 
   const validationSchema = Yup.object({
     username: Yup.string().required('Campo obrigatório'),
@@ -19,7 +30,8 @@ const Login = () => {
 
   const handleLogin = async (values, { setSubmitting }) => {
     try {
-      const apiUrl = 'http://localhost:8000/login';
+      const baseUrl = process.env.REACT_APP_BASE_URL;
+      const apiUrl = `${baseUrl}/login`;
       console.log(values)
       const credentials = new URLSearchParams();
       credentials.append('username', values.username);
@@ -37,6 +49,7 @@ const Login = () => {
       if (!response.ok) {
         console.error('Erro ao fazer login:', response.statusText);
         // Tratar erros mais detalhadamente, se necessário
+        
         return null;
       }
 
@@ -44,7 +57,45 @@ const Login = () => {
 
       if (response.ok) {
         // Notificar o backend sobre a mudança de status
+        localStorage.setItem('isAuthenticated','true')
+
         await notifyStatusChange(true);
+        if (localStorage.getItem('myPrivateKey') !== null) {
+          // The key exists in localStorage
+
+          try {
+            // Essas chaves precisam ser geradas todas as vezes que o usuário entrar no chat
+            const keyPair = await RSAHandler.generateRsaKeys()
+
+            setPrivateKey(keyPair.privateKey)
+            setPublicKey(keyPair.publicKey)
+            // Export the key to a storable format (e.g., JWK)
+            const user_id = userData.user.id_
+            const ExportedPublicKey = await exportKey(keyPair.publicKey)
+            const ExportedPrivateKey = await exportKey(keyPair.privateKey)
+            localStorage.setItem("myPrivateKey", JSON.stringify(ExportedPrivateKey));
+            localStorage.setItem("myPublicKey", JSON.stringify(ExportedPublicKey));
+            setUserPublicKey(ExportedPublicKey)
+            
+            const userRegisterData = JSON.stringify({
+                user_id: user_id,
+                public_key: ExportedPublicKey, // Exporting publicKey in a usable format
+            })
+            // console.log(userRegisterData);
+            const response = await fetch(`${baseUrl}/update-public-key/${user_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: userRegisterData
+            });
+        } catch (error) {
+            console.error('error in publish public key:', error)
+        }
+          
+          console.log('The information is still in localStorage.');
+        }
+        sessionStorage.setItem('isAuthenticated', 'true');
 
         // Navegar para a tela de home após o login bem-sucedido
         navigate('/home', { replace: true });
