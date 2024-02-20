@@ -19,8 +19,9 @@ const validationSchema = Yup.object().shape({
 });
 
 const Signup = () => {
-  const baseUrl = process.env.BASE_URL;
-
+  console.log(process.env)
+  const baseUrl = process.env.REACT_APP_BASE_URL;
+  console.log(baseUrl)
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [username, setUsername] = useState('')

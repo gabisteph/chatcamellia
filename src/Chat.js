@@ -12,10 +12,8 @@ import { ChatHeader } from './components/Chat/chatHeader.js'
 console.log('Imported camellia', camellia)
 
 const Chat = () => {
-    // Pega daqui
-    // const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('')
-    const baseUrl = process.env.BASE_URL;
+    const baseUrl = process.env.REACT_APP_BASE_URL;
     const SERVER_URL = baseUrl
     const socketRef = useRef(null)
     const [username, setUsername] = useState('')
@@ -24,14 +22,10 @@ const Chat = () => {
     const [privateKey, setPrivateKey] = useState('')
     const [publicKey, setPublicKey] = useState('')
     const [sid, setSid] = useState('')
-    // const [userSessions, setUserSessions] = useState({});
-    // const [currentSession, setCurrentSession] = useState('')
-    // const [myIdUser, setMyIdUser] = useState('')
     const [CurrentSymmetricKey, setSymmetricKey] = useState('')
     const [MyUserPublicKey, setUserPublicKey] = useState('')
     const [CurrentUserPublic, setCurrentUserPublic] = useState('')
     const [currentGroupPublicKeys, setCurrentGroupPublicKeys] = useState([])
-    // const [groups, setGroups] = useState('')
     // CurrentUserPublic é a chave do usuário que eu vou enviar a mensagem
 
     const { messages, setMessages } = useChat()
@@ -53,7 +47,10 @@ const Chat = () => {
             transports: ['websocket'],
             rejectUnauthorized: false,
         })
-        const user_id = sessionStorage.getItem('userId')
+        // const user_id = sessionStorage.getItem('userId')
+        console.log('GOT USER ID')
+        const user_id = localStorage.getItem('userId')
+        console.log('USER ID', user_id)
         setMyIdUser(user_id)
         async function decryptMessages(text, key) {
             const keyBuffer = base64ToArrayBuffer(key)
@@ -125,17 +122,22 @@ const Chat = () => {
             const decryptedMessages = await Promise.all(
                 incomingMessages.map(async (message) => {
                     const { text, key, sender, session_id } = message
-                    setUserSessions((prevSessions) => ({
-                        ...prevSessions,
-                        [sender]: session_id,
-                    }))
+                    userSessions[sender] = session_id
+
+                    // setUserSessions((prevSessions) => ({
+                    //     ...prevSessions,
+                    //     [sender]: session_id,
+                    // }))
                     
                     userSessions[sender] = session_id
+                    console.log('CURRENT SESSIONS')
+                    console.log(userSessions)
                     setCurrentSession(session_id)
                     console.log('Chave simetrica recebida')
                     console.log(key)
                     setCurrentUser(sender)
                     const plainText = await decryptMessages(text, key)
+                    console.log(plainText)
                     const response = await fetch(
                         `${baseUrl}/public-key/${sender}`
                     )
@@ -227,7 +229,7 @@ const Chat = () => {
             // Filter out the current user's data from the list
             console.log('Recebendo a lista de usuários no chat:')
             console.log(usersList)
-            const storedUsername = sessionStorage.getItem('username')
+            const storedUsername = localStorage.getItem('username')
             const otherUsers = usersList.filter(
                 (user) => user.username !== storedUsername
             )
@@ -239,7 +241,7 @@ const Chat = () => {
         // Evento para receber o Sid
         socketRef.current.on('getSid', async (receivedSid) => {
             console.log('Received sid: ' + receivedSid)
-            const user_id = sessionStorage.getItem('userId')
+            const user_id = localStorage.getItem('userId')
             sessionStorage.setItem('Sid', receivedSid)
             
             const data = {sid: receivedSid, 
@@ -298,6 +300,39 @@ const Chat = () => {
         )
 
         return cryptoKey
+    }
+    const getSessionIdById = (userId) => {
+        return userSessions[userId]
+    }
+    const doesSessionExist = (userId) => {
+        return userSessions.hasOwnProperty(userId)
+    }
+
+    function generateSessionId() {
+        return crypto.randomUUID()
+    }
+    async function createSessionID (user) {
+        console.log('on chat')
+        console.log(user)
+        if (!doesSessionExist(user)) {
+            const sessionId = generateSessionId() // Your session ID generation logic
+            userSessions[user] = sessionId
+            // setUserSessions((prevSessions) => ({
+            //     ...prevSessions,
+            //     [user]: sessionId,
+            // }))
+            console.log('Criando uma sessão')
+            setCurrentSession(sessionId)
+            console.log('Session')
+            console.log(sessionId)
+            return sessionId
+        } else {
+            const sessionId = getSessionIdById(user)
+            console.log('Getting existing session', sessionId)
+            setCurrentSession(sessionId)
+            return sessionId
+        }
+       
     }
     const sendMessage = async () => {
 
@@ -465,6 +500,8 @@ const Chat = () => {
         console.log('Mandando mensagem para o usuário:', CurrentUser)
         // console.log(CurrentUser)
         const encryptedMessage = camellia.encrypt(myHash)
+        const sessionId = await createSessionID(item)
+        console.log('got the following session id:', sessionId)
         const messageData = {
             text: encryptedMessage,
             from: myIdUser,
@@ -472,7 +509,7 @@ const Chat = () => {
             key: encryptedPublicKeyBase64,
             sender_key: encryptedSymmetricKeyForSenderBase64, // Key encrypted with sender's public key
             iv: Iv,
-            session_id: currentSession,
+            session_id: sessionId,
             type: 'individual'
 
         }
