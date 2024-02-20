@@ -2,6 +2,10 @@
   "name": "chatcamellia",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "18.6",
+    "npm": "9.5.1"
+  },
   "proxy": "https://tranquil-escarpment-24882-caea67df61ed.herokuapp.com/",
   "dependencies": {
     "@emotion/react": "^11.11.3",
@@ -50,8 +54,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "engines": {
-    "node": "18.16"
   }
+ 
 }
