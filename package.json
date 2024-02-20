@@ -1,5 +1,6 @@
 {
   "name": "chatcamellia",
+  "homepage": "https://gabisteph.github.io/chatcamellia/",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -33,6 +34,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "predeploy": "npm run build", 
+    "deploy": "gh-pages -d build", 
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
