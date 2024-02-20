@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/chatcamellia/static/css/main.3bb6e23b.css",
-    "main.js": "/chatcamellia/static/js/main.a2c9e4e7.js",
+    "main.js": "/chatcamellia/static/js/main.ff251264.js",
     "static/js/787.31e60631.chunk.js": "/chatcamellia/static/js/787.31e60631.chunk.js",
     "index.html": "/chatcamellia/index.html",
     "main.3bb6e23b.css.map": "/chatcamellia/static/css/main.3bb6e23b.css.map",
-    "main.a2c9e4e7.js.map": "/chatcamellia/static/js/main.a2c9e4e7.js.map",
+    "main.ff251264.js.map": "/chatcamellia/static/js/main.ff251264.js.map",
     "787.31e60631.chunk.js.map": "/chatcamellia/static/js/787.31e60631.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.3bb6e23b.css",
-    "static/js/main.a2c9e4e7.js"
+    "static/js/main.ff251264.js"
   ]
 }
