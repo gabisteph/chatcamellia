@@ -61,7 +61,7 @@ function App() {
                 <Route path="/chatcamellia/login" element={<Login />} />
                 <Route path="/chatcamellia/signup" element={<Signup />} />
                 <Route
-                  path="/home"
+                  path="/chatcamellia/home"
                   element={
                     <PrivateRoute>
                       <Home />
@@ -69,7 +69,7 @@ function App() {
                   }
                 />
                 <Route
-                  path="/chat"
+                  path="/chatcamellia/chat"
                   element={
                     <PrivateRoute>
                       <Chat />
@@ -78,7 +78,7 @@ function App() {
                 />
                 <Route
                   path="/"
-                  element={<Navigate to="/signup" replace />}
+                  element={<Navigate to="/chatcamellia/signup" replace />}
                 />
               </Routes>
             </Router>
