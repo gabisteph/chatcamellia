@@ -18,10 +18,10 @@
 //     <ChatProvider>
 //       <Router>
 //         <Routes>
-//           <Route path="/login" element={<Login />} />
-//           <Route path="/signup" element={<Signup />} />
-//           <Route path="/home" element={<Home />} />
-//           <Route path="/chat" element={<Chat />} />
+//           <Route path="/chatcamellia/login" element={<Login />} />
+//           <Route path="/chatcamellia/signup" element={<Signup />} />
+//           <Route path="/chatcamellia/home" element={<Home />} />
+//           <Route path="/chatcamellia/chat" element={<Chat />} />
 //           <Route
 //             path="/"
 //             element={<Navigate to="/signup" replace />}
@@ -58,8 +58,8 @@ function App() {
           <ChatProvider>
             <Router>
               <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+                <Route path="/chatcamellia/login" element={<Login />} />
+                <Route path="/chatcamellia/signup" element={<Signup />} />
                 <Route
                   path="/home"
                   element={
